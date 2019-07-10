@@ -3,13 +3,24 @@
 #include "serialport.h"
 #include <QSerialPortInfo>
 #include "status.h"
-MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent),ui(new Ui::MainWindow),series(new QLineSeries),chart(new QChart),timer(new QTimer),status(new Status)
+MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent),ui(new Ui::MainWindow),series(new QLineSeries),timer(new QTimer),status(new Status)
 {
+//    showMaximized();
     //set white background color
     ui->setupUi(this);
     p.setColor(QPalette::Background,Qt::white);
     setAutoFillBackground(true);
     setPalette(p);
+
+    for(int i=0;i<21;i++)
+    {
+        dataEdit[i]=new QLineEdit();
+        dataEdit[i]->setMaximumWidth(70);
+        dataEdit[i]->setReadOnly(true);
+        dataEdit[i]->setText("NULL");
+        ui->lineLayout->addWidget(dataEdit[i]);
+    }
+    ui->lineLayout->addStretch();
 
     status->isrunning=false;
     status->isconnected=false;
@@ -36,38 +47,44 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent),ui(new Ui::MainWin
     connect(uart,SIGNAL(receive_data(QByteArray)),this,SLOT(on_receive_data(QByteArray)), Qt::QueuedConnection);
     connect(this,SIGNAL(closed()),uart,SLOT(stop_port()));
 
-    for(int i=0;i<12;i++)
+//    series->setName("line1");
+//    chart->addSeries(series);
+
+    for(int i=0;i<4;i++)
+        chart[i]=new QChart();
+    for(int i=0;i<21;i++)
     {
         mSeries[i]=new QLineSeries();
         mSeries[i]->setName(SeriesName[i]);
-        chart->addSeries(mSeries[i]);
+        chart[SeriesIndex[i]]->addSeries(mSeries[i]);
     }
+    for(int i=0;i<4;i++)
+    {
+        chart[i]->createDefaultAxes();
 
-//    series2=new QLineSeries();
-//    series->setName("line1");
-//    chart->addSeries(series);
-//    chart->addSeries(series2);
-    chart->createDefaultAxes();
+        chart[i]->setTitle("Chart");
+        chart[i]->axisX()->setTitleFont(QFont("Microsoft YaHei", 10, QFont::Normal,false));
+        chart[i]->axisY()->setTitleFont(QFont("Microsoft YaHei", 10, QFont::Normal,false));
+        chart[i]->axisX()->setRange(0,XRANGE);
+        chart[i]->axisY()->setRange(-10,10);
+        chart[i]->axisX()->setTitleText("Time");
+        chart[i]->axisY()->setTitleText("data");
+        chart[i]->axisX()->setGridLineVisible(true);
+        chart[i]->axisY()->setGridLineVisible(true);
+        chart[i]->axisX()->setVisible(false);
+        chart[i]->axisY()->setVisible(true);
+        chart[i]->axisX()->setTitleVisible(true);
+        chart[i]->axisY()->setTitleVisible(true);
+        chart[i]->legend()->setAlignment(Qt::AlignBottom);
+//        chart->legend()->hide();
+//        const auto markers=chart->legend()->markers();
+//        markers[1]->series()->setVisible(false);
+//        markers[1]->setVisible(true);
 
-    chart->axisX()->setTitleFont(QFont("Microsoft YaHei", 10, QFont::Normal,false));
-    chart->axisY()->setTitleFont(QFont("Microsoft YaHei", 10, QFont::Normal,false));
-    chart->axisX()->setRange(0,XRANGE);
-    chart->axisY()->setRange(-1000,1000);
-    chart->axisX()->setTitleText("Time");
-    chart->axisY()->setTitleText("Voltage");
-    chart->axisX()->setGridLineVisible(true);
-    chart->axisY()->setGridLineVisible(true);
-    chart->axisX()->setVisible(true);
-    chart->axisX()->setTitleVisible(true);
-
-    //chart->legend()->hide();
-//    const auto markers=chart->legend()->markers();
-//    markers[1]->series()->setVisible(false);
-//    markers[1]->setVisible(true);
-
-    chartView = new QChartView(chart);
-    chartView->setRenderHint(QPainter::Antialiasing);
-    ui->mainLayout->addWidget(chartView);
+        chartView[i] = new QChartView(chart[i]);
+        chartView[i]->setRenderHint(QPainter::Antialiasing);
+        ui->mainLayout->addWidget(chartView[i],i/2,i%2);
+    }
 
     connectMarkers();
 
@@ -84,7 +101,13 @@ void MainWindow::on_receive_data(QByteArray data)
     for(int i=0;i<6;i++)
         PData[i]=((int)((uint8_t)(data.at(i*4))<<24))|((int)((uint8_t)(data.at(i*4+1))<<16))|((int)((uint8_t)(data.at(i*4+2))<<8))|((int)((uint8_t)(data.at(i*4+3))));
     for(int i=0;i<6;i++)
-        PData[i+6]=(int)(data[24+i]);
+        PData[i+15]=(int)(data[24+i]);
+    for(int i=0;i<3;i++)
+    {
+        PData[i+6]+=PData[i];
+//        PData[i+9]+=PData[i+6];
+        PData[i+12]+=PData[i+3];
+    }
     //data.clear();
     //qDebug() << "main handing thread is:" << QThread::currentThreadId();
     //qDebug() << "main: " << data.toHex();
@@ -115,7 +138,7 @@ void MainWindow::ReadData()
                     data_twocircle.append(QPointF(data[i].x()+pre_size,data[i].y()));
                 }
 
-                chart->axisX()->setRange(0,2*(cnt+tsum-2));
+                chart[0]->axisX()->setRange(0,2*(cnt+tsum-2));
                 series->replace(data_twocircle);
                 data_twocircle.clear();
                 pre_size=0;
@@ -159,9 +182,12 @@ void MainWindow::timerSlot()
 //        temp.append(QPointF(i,data[i].y()));
 //    series->clear();
 //    series->replace(temp);
-
-    for(int cnt=0;cnt<12;cnt++)
+    static uint8_t dataTextUpdatecnt=0;
+    dataTextUpdatecnt++;
+    for(int cnt=0;cnt<21;cnt++)
     {
+        if(dataTextUpdatecnt>=4)
+            dataEdit[cnt]->setText(QString::number(PData[cnt]));
         QVector<QPointF> oldData = mSeries[cnt]->pointsVector();
         QVector<QPointF> data;
         if (oldData.isEmpty() || oldData.at(oldData.size()-1).x() < XRANGE)
@@ -180,14 +206,58 @@ void MainWindow::timerSlot()
         for(int i = 1; i < 2; ++i)
         {
             if(!data.isEmpty())
+            {
+                if(maxValue[SeriesIndex[cnt]]<PData[cnt])
+                {
+                    maxValue[SeriesIndex[cnt]]=PData[cnt];
+                    chart[SeriesIndex[cnt]]->axisY()->setMax(maxValue[SeriesIndex[cnt]]*1.1+10);
+                }
+                if(minValue[SeriesIndex[cnt]]>PData[cnt])
+                {
+                    minValue[SeriesIndex[cnt]]=PData[cnt];
+                    chart[SeriesIndex[cnt]]->axisY()->setMin(minValue[SeriesIndex[cnt]]*1.1-10);
+                }
+                //chart->axisY()->setRange(minValue*1.1,maxValue*1.1);
                 data.append(QPointF(i * 1 + data.at(data.size()-1).x(), PData[cnt]));
                 //data.append(QPointF(i * 1 + data.at(data.size()-1).x(), 10 * sin(M_PI * count * 4 / 180 + cnt*3.14/20)));
+            }
             else
+            {
                 data.append(QPointF(0,0));
                 //data.append(QPointF(0, 10 * sin(M_PI * count * 4 / 180 + cnt*3.14/20)));
+            }
         }
         mSeries[cnt]->replace(data);
+
+//        double dx=0;
+//        if(!oldData.isEmpty())
+//        {
+//            if(maxValue<PData[cnt])
+//            {
+//               maxValue=PData[cnt];
+//               chart->axisY()->setMax(maxValue*1.1+10);
+//            }
+//            if(minValue>PData[cnt])
+//            {
+//               minValue=PData[cnt];
+//               chart->axisY()->setMin(minValue*1.1-10);
+//            }
+//            dx=1 + oldData.at(oldData.size()-1).x();
+//            mSeries[cnt]->append(QPointF( dx, PData[cnt]));
+//        }
+//        else
+//        {
+//            mSeries[cnt]->append(QPointF(0,0));
+//        }
+//        if (!oldData.isEmpty() && oldData.at(oldData.size()-1).x() >= XRANGE)
+//        {
+//            mSeries[cnt]->remove(0);
+//            chart->axisX()->setRange(dx-XRANGE,dx);
+//        }
+
     }
+    if(dataTextUpdatecnt>=4)
+        dataTextUpdatecnt=0;
     count++;
 }
 void MainWindow::on_btnOpenGL_clicked()
@@ -226,6 +296,8 @@ void MainWindow::on_btnStart_clicked()
 {
     if(status->isrunning==false)
     {
+        for(int i=0;i<12;i++)
+            mSeries[i]->clear();
         ui->btnStart->setText("Stop");
         status->isrunning=true;
         timer->start();
@@ -241,12 +313,15 @@ void MainWindow::connectMarkers()
 {
 //![1]
     // Connect all markers to handler
-    const auto markers = chart->legend()->markers();
-    for (QLegendMarker *marker : markers)
+    for(int i=0;i<4;i++)
     {
-        // Disconnect possible existing connection to avoid multiple connections
-        QObject::disconnect(marker, &QLegendMarker::clicked, this, &MainWindow::handleMarkerClicked);
-        QObject::connect(marker, &QLegendMarker::clicked, this, &MainWindow::handleMarkerClicked);
+        const auto markers = chart[i]->legend()->markers();
+        for (QLegendMarker *marker : markers)
+        {
+            // Disconnect possible existing connection to avoid multiple connections
+            QObject::disconnect(marker, &QLegendMarker::clicked, this, &MainWindow::handleMarkerClicked);
+            QObject::connect(marker, &QLegendMarker::clicked, this, &MainWindow::handleMarkerClicked);
+        }
     }
 //![1]
 }

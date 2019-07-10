@@ -48,16 +48,16 @@ void SerialPort::start_port(QString portname, int baudrate)
     if (port->open(QIODevice::ReadWrite))
     {
         qDebug() << "Port have been opened";
+        connect(port, SIGNAL(readyRead()), this, SLOT(handle_data())); //Qt::DirectConnection
+        this->moveToThread(my_thread);
+        port->moveToThread(my_thread);
+        my_thread->start();  //启动线程
         emit connected();
     }
     else
     {
         qDebug() << "open it failed";
     }
-    connect(port, SIGNAL(readyRead()), this, SLOT(handle_data())); //Qt::DirectConnection
-    this->moveToThread(my_thread);
-    port->moveToThread(my_thread);
-    my_thread->start();  //启动线程
 }
 void SerialPort::stop_port()
 {

@@ -11,6 +11,7 @@
 #include <QTcpSocket>
 #include <QChart>
 #include <QTimer>
+#include <QLineEdit>
 #include "serialport.h"
 #include "status.h"
 
@@ -29,9 +30,10 @@ private:
     void connectMarkers();
     Ui::MainWindow *ui;
     QPalette p;
-    QChartView *chartView;
+    QChartView *chartView[4];
+    QLineEdit *dataEdit[21];
     QLineSeries *series;
-    QChart *chart;
+    QChart *chart[4];
     QTimer *timer;
     QVector<QPointF> data;
     QVector<QPointF> data_twocircle;
@@ -39,10 +41,11 @@ private:
     SerialPort *uart;
     Status *status;
     quint16 count;
-    int PData[12]={0};
-    QLineSeries *mSeries[12];
-    QString SeriesName[12]={"Xaccel","Yaccel","Zaccel","Xgyro","Ygyro","Zgyro","XaccelT","YaccelT","ZaccelT","XgyroT","YgyroT","ZgyroT"};
-
+    int PData[21]={0};
+    int SeriesIndex[21]={0,0,0,1,1,1,2,2,2,2,2,2,1,1,1,3,3,3,3,3,3};
+    QLineSeries *mSeries[21];
+    QString SeriesName[21]={"Xaccel","Yaccel","Zaccel","Xgyro","Ygyro","Zgyro","Xspeed","Yspeed","Zspeed","Xdist","Ydist","Zdist","Xangle","Yangle","Zangle","XaccelT","YaccelT","ZaccelT","XgyroT","YgyroT","ZgyroT"};
+    int maxValue[4]={-0xfffffff,-0xfffffff,-0xfffffff,-0xfffffff},minValue[4]={0xfffffff,0xfffffff,0xfffffff,0xfffffff};
 private slots:
     void timerSlot();
     void ReadData();
