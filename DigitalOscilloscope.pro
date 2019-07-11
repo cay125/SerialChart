@@ -8,7 +8,7 @@ QT       += core gui
 QT       += charts
 QT       += network
 QT       += serialport
-QT       +=
+QT       += printsupport
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -31,12 +31,14 @@ SOURCES += \
         configuration.cpp \
         main.cpp \
         mainwindow.cpp \
+        qcustomplot.cpp \
         serialport.cpp \
         status.cpp
 
 HEADERS += \
         configuration.h \
         mainwindow.h \
+        qcustomplot.h \
         serialport.h \
         status.h
 

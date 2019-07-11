@@ -51,17 +51,36 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent),ui(new Ui::MainWin
 //    chart->addSeries(series);
 
     for(int i=0;i<4;i++)
+    {
+        customplot[i]=new QCustomPlot(this);
         chart[i]=new QChart();
+    }
+    QPen pen[9];
+    pen[0].setColor(QColor(250,120,  0));
+    pen[1].setColor(QColor(  0,180, 60));
+    pen[2].setColor(QColor(0xff,0, 0));
+    pen[8].setColor(QColor(  0,0x66, 0xff));
+    pen[7].setColor(QColor(  0xff,0x77, 0xff));
+//    pen[5].setColor(QColor(  0xd2,0x69, 0x1e));
+    pen[5].setColor(QColor(  0xda,0xa5, 0x20));
+    pen[6].setColor(QColor(  0xff,0x14, 0x93));
+    pen[4].setColor(QColor(  0x80,0x80, 0));
+    pen[3].setColor(QColor(  0x22,0x8b, 0x22));
+    int color[4]={0};
     for(int i=0;i<21;i++)
     {
         mSeries[i]=new QLineSeries();
         mSeries[i]->setName(SeriesName[i]);
         chart[SeriesIndex[i]]->addSeries(mSeries[i]);
+
+        customplot[SeriesIndex[i]]->addGraph();
+        mGraphs[i]=customplot[SeriesIndex[i]]->graph();
+        mGraphs[i]->setName(SeriesName[i]);
+        mGraphs[i]->setPen(pen[color[SeriesIndex[i]]++]);
     }
     for(int i=0;i<4;i++)
     {
         chart[i]->createDefaultAxes();
-
         chart[i]->setTitle("Chart");
         chart[i]->axisX()->setTitleFont(QFont("Microsoft YaHei", 10, QFont::Normal,false));
         chart[i]->axisY()->setTitleFont(QFont("Microsoft YaHei", 10, QFont::Normal,false));
@@ -76,25 +95,50 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent),ui(new Ui::MainWin
         chart[i]->axisX()->setTitleVisible(true);
         chart[i]->axisY()->setTitleVisible(true);
         chart[i]->legend()->setAlignment(Qt::AlignBottom);
-//        chart->legend()->hide();
-//        const auto markers=chart->legend()->markers();
-//        markers[1]->series()->setVisible(false);
-//        markers[1]->setVisible(true);
-
         chartView[i] = new QChartView(chart[i]);
         chartView[i]->setRenderHint(QPainter::Antialiasing);
-        ui->mainLayout->addWidget(chartView[i],i/2,i%2);
+//        ui->mainLayout->addWidget(chartView[i],i/2,i%2);
+
+        customplot[i]->legend->setVisible(true);
+        customplot[i]->xAxis2->setVisible(true);
+        customplot[i]->xAxis2->setTickLabels(false);
+        customplot[i]->yAxis2->setVisible(true);
+        customplot[i]->yAxis2->setTickLabels(false);
+        customplot[i]->xAxis->setRange(0,XRANGE);
+        customplot[i]->yAxis->setRange(-10,10);
+        customplot[i]->xAxis->setTickLabels(false);
+        customplot[i]->legend->setVisible(true);
+        ui->mainLayout->addWidget(customplot[i],i/2,i%2);
     }
 
     connectMarkers();
 
+    QVector<double> x,y;
     for(int i=0;i<200;i++)
+    {
+        x.append(i);
+        y.append(4*sin(2*3.14/200*i));
         data.append(QPointF(i,4*sin(2*3.14/200*i)));
+    }
     //mSeries[0]->replace(data);
     //series2->replace(data);
-    connect(timer, SIGNAL(timeout()), this, SLOT(timerSlot()));
+
+//    connect(timer, SIGNAL(timeout()), this, SLOT(timerSlot()));
+    connect(timer, SIGNAL(timeout()), this, SLOT(timerSlot_customplot()));
     timer->setInterval(20);
     //timer->start();
+
+//    customplot[0] = new QCustomPlot(this);
+//    customplot[0]->addGraph();
+//    customplot[0]->graph(0)->setData(x,y);
+//    customplot[0]->xAxis->setRange(0,200);
+//    customplot[0]->yAxis->setRange(-5,5);
+//    customplot[0]->xAxis2->setVisible(true);
+//    customplot[0]->xAxis2->setTickLabels(false);
+//    customplot[0]->yAxis2->setVisible(true);
+//    customplot[0]->yAxis2->setTickLabels(false);
+//    customplot[0]->legend->setVisible(false);
+//    ui->mainLayout->addWidget(customplot[0]);
 }
 void MainWindow::on_receive_data(QByteArray data)
 {
@@ -174,6 +218,30 @@ void MainWindow::ReadError(QAbstractSocket::SocketError)
     QMessageBox msgBox;
     msgBox.setText(tr("failed to connect server because %1").arg(tcpClient->errorString()));
     msgBox.exec();
+}
+void MainWindow::timerSlot_customplot()
+{
+    static int dx=0;
+    for(int cnt=0;cnt<21;cnt++)
+    {
+        // calculate and add a new data point to each graph:
+        mGraphs[cnt]->addData(dx, PData[cnt]);
+        if(dx > XRANGE)
+        {
+            mGraphs[cnt]->data()->remove(dx-XRANGE);
+        }
+        mGraphs[cnt]->rescaleValueAxis(true, true);
+    }
+    for(int i=0;i<4;i++)
+    {
+        if(dx>XRANGE)
+        {
+            customplot[i]->xAxis->rescale();
+            customplot[i]->xAxis->setRange(customplot[i]->xAxis->range().upper, XRANGE, Qt::AlignRight);
+        }
+        customplot[i]->replot();
+    }
+    dx++;
 }
 void MainWindow::timerSlot()
 {

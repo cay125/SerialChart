@@ -12,6 +12,7 @@
 #include <QChart>
 #include <QTimer>
 #include <QLineEdit>
+#include "qcustomplot.h"
 #include "serialport.h"
 #include "status.h"
 
@@ -31,6 +32,7 @@ private:
     Ui::MainWindow *ui;
     QPalette p;
     QChartView *chartView[4];
+    QCustomPlot *customplot[4];
     QLineEdit *dataEdit[21];
     QLineSeries *series;
     QChart *chart[4];
@@ -44,10 +46,12 @@ private:
     int PData[21]={0};
     int SeriesIndex[21]={0,0,0,1,1,1,2,2,2,2,2,2,1,1,1,3,3,3,3,3,3};
     QLineSeries *mSeries[21];
+    QCPGraph * mGraphs[21];
     QString SeriesName[21]={"Xaccel","Yaccel","Zaccel","Xgyro","Ygyro","Zgyro","Xspeed","Yspeed","Zspeed","Xdist","Ydist","Zdist","Xangle","Yangle","Zangle","XaccelT","YaccelT","ZaccelT","XgyroT","YgyroT","ZgyroT"};
     int maxValue[4]={-0xfffffff,-0xfffffff,-0xfffffff,-0xfffffff},minValue[4]={0xfffffff,0xfffffff,0xfffffff,0xfffffff};
 private slots:
     void timerSlot();
+    void timerSlot_customplot();
     void ReadData();
     void ReadError(QAbstractSocket::SocketError);
     void on_btnOpenGL_clicked();
