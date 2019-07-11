@@ -28,6 +28,7 @@ DEFINES += QT_DEPRECATED_WARNINGS
 
 
 SOURCES += \
+        axistag.cpp \
         configuration.cpp \
         main.cpp \
         mainwindow.cpp \
@@ -36,6 +37,7 @@ SOURCES += \
         status.cpp
 
 HEADERS += \
+        axistag.h \
         configuration.h \
         mainwindow.h \
         qcustomplot.h \

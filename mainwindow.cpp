@@ -50,6 +50,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent),ui(new Ui::MainWin
 //    series->setName("line1");
 //    chart->addSeries(series);
 
+    for(int i=0;i<21;i++)
+        chartLine[SeriesIndex[i]].push_back(i);
     for(int i=0;i<4;i++)
     {
         customplot[i]=new QCustomPlot(this);
@@ -66,6 +68,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent),ui(new Ui::MainWin
     pen[6].setColor(QColor(  0xff,0x14, 0x93));
     pen[4].setColor(QColor(  0x80,0x80, 0));
     pen[3].setColor(QColor(  0x22,0x8b, 0x22));
+    for(int i=0;i<9;i++)
+        pen[i].setWidth(2);
     int color[4]={0};
     for(int i=0;i<21;i++)
     {
@@ -80,6 +84,10 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent),ui(new Ui::MainWin
     }
     for(int i=0;i<4;i++)
     {
+        customplot[i]->axisRect()->axis(QCPAxis::atRight, 0)->setPadding(80); // add some padding to have space for tags
+        mTags[i] = new AxisTag(mGraphs[chartLine[i][0]]->valueAxis());
+        mTags[i]->setPen(mGraphs[chartLine[i][0]]->pen());
+        mTags[i]->setText("0");
         chart[i]->createDefaultAxes();
         chart[i]->setTitle("Chart");
         chart[i]->axisX()->setTitleFont(QFont("Microsoft YaHei", 10, QFont::Normal,false));
@@ -234,11 +242,19 @@ void MainWindow::timerSlot_customplot()
     }
     for(int i=0;i<4;i++)
     {
+        double graphValue;
         if(dx>XRANGE)
         {
             customplot[i]->xAxis->rescale();
             customplot[i]->xAxis->setRange(customplot[i]->xAxis->range().upper, XRANGE, Qt::AlignRight);
+            graphValue = mGraphs[chartLine[i][0]]->dataMainValue(XRANGE);
         }
+        else
+        {
+            graphValue = mGraphs[chartLine[i][0]]->dataMainValue(dx);
+        }
+        mTags[i]->updatePosition(graphValue);
+        mTags[i]->setText(QString::number(graphValue));
         customplot[i]->replot();
     }
     dx++;

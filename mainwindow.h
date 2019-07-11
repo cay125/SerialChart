@@ -13,6 +13,7 @@
 #include <QTimer>
 #include <QLineEdit>
 #include "qcustomplot.h"
+#include "axistag.h"
 #include "serialport.h"
 #include "status.h"
 
@@ -33,6 +34,7 @@ private:
     QPalette p;
     QChartView *chartView[4];
     QCustomPlot *customplot[4];
+    AxisTag *mTags[4];
     QLineEdit *dataEdit[21];
     QLineSeries *series;
     QChart *chart[4];
@@ -44,6 +46,7 @@ private:
     Status *status;
     quint16 count;
     int PData[21]={0};
+    QVector<int> chartLine[4];
     int SeriesIndex[21]={0,0,0,1,1,1,2,2,2,2,2,2,1,1,1,3,3,3,3,3,3};
     QLineSeries *mSeries[21];
     QCPGraph * mGraphs[21];
