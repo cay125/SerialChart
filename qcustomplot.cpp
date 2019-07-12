@@ -11073,7 +11073,13 @@ void QCPAbstractPlottable::rescaleValueAxis(bool onlyEnlarge, bool inKeyRange) c
         newRange.upper = center*qSqrt(valueAxis->range().upper/valueAxis->range().lower);
       }
     }
+//    valueAxis->setRange(newRange);
+
+    //modified by xiangpu 2019-7-2
+    newRange.lower=newRange.lower*1.2-10;
+    newRange.upper=newRange.upper*1.2+10;
     valueAxis->setRange(newRange);
+
   }
 }
 

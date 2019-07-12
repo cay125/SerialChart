@@ -33,6 +33,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent),ui(new Ui::MainWin
         ui->ComBox->addItem(info.portName());
         ui->ComBox->setCurrentIndex(0);
     }
+    ui->ComBox->setFont(QFont("Microsoft YaHei", 9, QFont::Normal,false));
 
     //add Baudrate to combobox
     ui->BaudBox->addItem("9600");
@@ -40,7 +41,9 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent),ui(new Ui::MainWin
     ui->BaudBox->addItem("38400");
     ui->BaudBox->addItem("115200");
     ui->BaudBox->setCurrentIndex(3);
+    ui->BaudBox->setFont(QFont("Microsoft YaHei", 9, QFont::Normal,false));
     ui->FlashEdit->setText("100");
+    ui->FlashEdit->setFont(QFont("Microsoft YaHei", 9, QFont::Normal,false));
 
     uart=new SerialPort();
     connect(uart,SIGNAL(connected()),this,SLOT(uart_connected()),Qt::QueuedConnection);
@@ -68,8 +71,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent),ui(new Ui::MainWin
     pen[6].setColor(QColor(  0xff,0x14, 0x93));
     pen[4].setColor(QColor(  0x80,0x80, 0));
     pen[3].setColor(QColor(  0x22,0x8b, 0x22));
-    for(int i=0;i<9;i++)
-        pen[i].setWidth(2);
+//    for(int i=0;i<9;i++)
+//        pen[i].setWidth(2);
     int color[4]={0};
     for(int i=0;i<21;i++)
     {
@@ -81,12 +84,18 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent),ui(new Ui::MainWin
         mGraphs[i]=customplot[SeriesIndex[i]]->graph();
         mGraphs[i]->setName(SeriesName[i]);
         mGraphs[i]->setPen(pen[color[SeriesIndex[i]]++]);
+        QCPSelectionDecorator *decorator=new QCPSelectionDecorator();
+        QPen tpen;
+        tpen.setColor(mGraphs[i]->pen().color());
+        tpen.setWidth(2);
+        decorator->setPen(tpen);
+        mGraphs[i]->setSelectionDecorator(decorator);
     }
     for(int i=0;i<4;i++)
     {
         customplot[i]->axisRect()->axis(QCPAxis::atRight, 0)->setPadding(80); // add some padding to have space for tags
-        mTags[i] = new AxisTag(mGraphs[chartLine[i][0]]->valueAxis());
-        mTags[i]->setPen(mGraphs[chartLine[i][0]]->pen());
+        mTags[i] = new AxisTag(mGraphs[chartLine[i][mainGraph[i]]]->valueAxis());
+        mTags[i]->setPen(mGraphs[chartLine[i][mainGraph[i]]]->pen());
         mTags[i]->setText("0");
         chart[i]->createDefaultAxes();
         chart[i]->setTitle("Chart");
@@ -107,6 +116,16 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent),ui(new Ui::MainWin
         chartView[i]->setRenderHint(QPainter::Antialiasing);
 //        ui->mainLayout->addWidget(chartView[i],i/2,i%2);
 
+        customplot[i]->setInteractions(QCP::iSelectLegend | QCP::iSelectPlottables);
+        customplot[i]->axisRect()->setupFullAxesBox();
+        customplot[i]->legend->setSelectedFont(QFont("Microsoft YaHei", 9, QFont::Normal,false));
+        customplot[i]->legend->setSelectableParts(QCPLegend::spItems); // legend box shall not be selectable, only legend items
+        // connect some interaction slots:
+        connect(customplot[i], SIGNAL(selectionChangedByUser()), this, SLOT(selectionChanged()));
+//        connect(customplot[i], SIGNAL(legendDoubleClick(QCPLegend*,QCPAbstractLegendItem*,QMouseEvent*)), this, SLOT(legendDoubleClick(QCPLegend*,QCPAbstractLegendItem*)));
+        customplot[i]->setContextMenuPolicy(Qt::CustomContextMenu);
+        connect(customplot[i], SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(contextMenuRequest(QPoint)));
+
         customplot[i]->legend->setVisible(true);
         customplot[i]->xAxis2->setVisible(true);
         customplot[i]->xAxis2->setTickLabels(false);
@@ -116,6 +135,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent),ui(new Ui::MainWin
         customplot[i]->yAxis->setRange(-10,10);
         customplot[i]->xAxis->setTickLabels(false);
         customplot[i]->legend->setVisible(true);
+        customplot[i]->legend->setFont(QFont("Microsoft YaHei", 9, QFont::Normal,false));
+        customplot[i]->axisRect()->insetLayout()->setInsetAlignment(0, Qt::AlignTop|Qt::AlignLeft);
         ui->mainLayout->addWidget(customplot[i],i/2,i%2);
     }
 
@@ -133,7 +154,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent),ui(new Ui::MainWin
 
 //    connect(timer, SIGNAL(timeout()), this, SLOT(timerSlot()));
     connect(timer, SIGNAL(timeout()), this, SLOT(timerSlot_customplot()));
-    timer->setInterval(20);
+    timer->setInterval(30);
     //timer->start();
 
 //    customplot[0] = new QCustomPlot(this);
@@ -148,12 +169,142 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent),ui(new Ui::MainWin
 //    customplot[0]->legend->setVisible(false);
 //    ui->mainLayout->addWidget(customplot[0]);
 }
+void MainWindow::selectionChanged()
+{
+    QCustomPlot* custom_chart = qobject_cast<QCustomPlot*> (sender());
+    // synchronize selection of graphs with selection of corresponding legend items:
+    for (int i=0; i<custom_chart->graphCount(); i++)
+    {
+        QCPGraph *graph = custom_chart->graph(i);
+        QCPPlottableLegendItem *item = custom_chart->legend->itemWithPlottable(graph);
+        if (item->selected() || graph->selected())
+        {
+            item->setSelected(true);
+            graph->setSelection(QCPDataSelection(graph->data()->dataRange()));
+        }
+    }
+}
+void MainWindow::legendDoubleClick(QCPLegend* legend,QCPAbstractLegendItem* item)
+{
+    // Rename a graph by double clicking on its legend item
+    Q_UNUSED(legend)
+    if (item) // only react if item was clicked (user could have clicked on border padding of legend where there is no item, then item is 0)
+    {
+//        QCPPlottableLegendItem *plItem = qobject_cast<QCPPlottableLegendItem*>(item);
+//        plItem->plottable()->setVisible(!plItem->plottable()->visible());
+//        plItem->setTextColor(QColor(0,0,0,plItem->plottable()->visible()?255:100));
+//        plItem->setSelected(false);
+        item->setSelected(false);
+    }
+}
+void MainWindow::removeSelectedGraph()
+{
+    if(customplot[plotSelect]->selectedGraphs().size()>0)
+    {
+        customplot[plotSelect]->selectedGraphs().first()->setVisible(false);
+    }
+}
+void MainWindow::removeAllGraphs()
+{
+    for(int i=0;i<chartLine[plotSelect].size();i++)
+    {
+        if(mainGraph[plotSelect]!=i)
+        {
+            mGraphs[chartLine[plotSelect][i]]->setVisible(false);
+            QCPPlottableLegendItem *plItem = qobject_cast<QCPPlottableLegendItem*>(customplot[plotSelect]->legend->item(i));
+            plItem->setTextColor(QColor(0,0,0,plItem->plottable()->visible()?255:100));
+        }
+    }
+}
+void MainWindow::applyMainGraph()
+{
+    if (QAction* contextAction = qobject_cast<QAction*>(sender()))
+    {
+        mainGraph[plotSelect] = contextAction->data().toInt();
+        mGraphs[chartLine[plotSelect][mainGraph[plotSelect]]]->setVisible(true);
+        QCPPlottableLegendItem *item = customplot[plotSelect]->legend->itemWithPlottable(mGraphs[chartLine[plotSelect][mainGraph[plotSelect]]]);
+        item->setTextColor(QColor(0,0,0,item->plottable()->visible()?255:100));
+        mTags[plotSelect]->setPen(mGraphs[chartLine[plotSelect][mainGraph[plotSelect]]]->pen());
+    }
+}
+void MainWindow::setLineVisible()
+{
+    if (QAction* contextAction = qobject_cast<QAction*>(sender()))
+    {
+        int index = contextAction->data().toInt();
+        mGraphs[chartLine[plotSelect][index]]->setVisible(!mGraphs[chartLine[plotSelect][index]]->visible());
+        customplot[plotSelect]->legend->item(index)->setTextColor(QColor(0,0,0,mGraphs[chartLine[plotSelect][index]]->visible()?255:100));
+//        if(!mGraphs[chartLine[plotSelect][index]]->visible())
+//        {
+//            customplot[plotSelect]->legend->item(index)->setSelected(false);
+//            customplot[plotSelect]->legend->item(index)->setSelectable(false);
+//        }
+    }
+}
+void MainWindow::contextMenuRequest(QPoint pos)
+{
+    QMenu *menu = new QMenu(this);
+    menu->setAttribute(Qt::WA_DeleteOnClose);
+    QCustomPlot* custom_chart = qobject_cast<QCustomPlot*> (sender());
+    for(int i=0;i<4;i++)
+    {
+        if(custom_chart==customplot[i])
+        {
+            plotSelect = i;
+            break;
+        }
+    }
+    if (custom_chart->legend->selectTest(pos, false) >= 0) // context menu on legend requested
+    {
+        for(int i=0;i<chartLine[plotSelect].size();i++)
+        {
+            if(custom_chart->legend->item(i)->selectTest(pos,false)>=0)
+            {
+                if(mainGraph[plotSelect]!=i)
+                {
+                    menu->addAction("Apply item as main chart", this, SLOT(applyMainGraph()))->setData(i);
+                    QCPPlottableLegendItem *plItem = qobject_cast<QCPPlottableLegendItem*>(custom_chart->legend->item(i));
+                    QString setVisibleItem=plItem->plottable()->visible()?"Remove line from chart":"Add line to chart";
+                    menu->addAction(setVisibleItem,this,SLOT(setLineVisible()))->setData(i);
+                }
+                break;
+            }
+        }
+        menu->addAction("Move to top left", this, SLOT(moveLegend()))->setData((int)(Qt::AlignTop|Qt::AlignLeft));
+        menu->addAction("Move to top center", this, SLOT(moveLegend()))->setData((int)(Qt::AlignTop|Qt::AlignHCenter));
+        menu->addAction("Move to top right", this, SLOT(moveLegend()))->setData((int)(Qt::AlignTop|Qt::AlignRight));
+        menu->addAction("Move to bottom right", this, SLOT(moveLegend()))->setData((int)(Qt::AlignBottom|Qt::AlignRight));
+        menu->addAction("Move to bottom left", this, SLOT(moveLegend()))->setData((int)(Qt::AlignBottom|Qt::AlignLeft));
+    }
+    else  // general context menu on graphs requested
+    {
+//        if (custom_chart->selectedGraphs().size() > 0)
+//          menu->addAction("Remove selected graph", this, SLOT(removeSelectedGraph()));
+        if (custom_chart->graphCount() > 0)
+          menu->addAction("Remove all graphs", this, SLOT(removeAllGraphs()));
+    }
+    menu->popup(custom_chart->mapToGlobal(pos));
+}
+void MainWindow::moveLegend()
+{
+    if (QAction* contextAction = qobject_cast<QAction*>(sender())) // make sure this slot is really called by a context menu action, so it carries the data we need
+    {
+        bool ok;
+        int dataInt = contextAction->data().toInt(&ok);
+        if (ok)
+        {
+            customplot[plotSelect]->axisRect()->insetLayout()->setInsetAlignment(0, (Qt::Alignment)dataInt);
+            if(!status->isrunning)
+                customplot[plotSelect]->replot();
+        }
+    }
+}
 void MainWindow::on_receive_data(QByteArray data)
 {
     for(int i=0;i<6;i++)
         PData[i]=((int)((uint8_t)(data.at(i*4))<<24))|((int)((uint8_t)(data.at(i*4+1))<<16))|((int)((uint8_t)(data.at(i*4+2))<<8))|((int)((uint8_t)(data.at(i*4+3))));
     for(int i=0;i<6;i++)
-        PData[i+15]=(int)(data[24+i]);
+        PData[i+15]=(int)(data[24+i])-24;
     for(int i=0;i<3;i++)
     {
         PData[i+6]+=PData[i];
@@ -229,30 +380,37 @@ void MainWindow::ReadError(QAbstractSocket::SocketError)
 }
 void MainWindow::timerSlot_customplot()
 {
-    static int dx=0;
+    static int dx=0, dataTextUpdateCnt=0;
+    dataTextUpdateCnt++;
     for(int cnt=0;cnt<21;cnt++)
     {
+        if(dataTextUpdateCnt>=3)
+            dataEdit[cnt]->setText(QString::number(PData[cnt]));
         // calculate and add a new data point to each graph:
         mGraphs[cnt]->addData(dx, PData[cnt]);
         if(dx > XRANGE)
         {
             mGraphs[cnt]->data()->remove(dx-XRANGE);
         }
-        mGraphs[cnt]->rescaleValueAxis(true, true);
+//        mGraphs[cnt]->rescaleValueAxis(true, true);
     }
+    if(dataTextUpdateCnt>=3)
+        dataTextUpdateCnt=0;
     for(int i=0;i<4;i++)
     {
+        mGraphs[chartLine[i][mainGraph[i]]]->rescaleValueAxis(false,true);
         double graphValue;
         if(dx>XRANGE)
         {
             customplot[i]->xAxis->rescale();
             customplot[i]->xAxis->setRange(customplot[i]->xAxis->range().upper, XRANGE, Qt::AlignRight);
-            graphValue = mGraphs[chartLine[i][0]]->dataMainValue(XRANGE);
+            graphValue = mGraphs[chartLine[i][mainGraph[i]]]->dataMainValue(XRANGE);
         }
         else
         {
-            graphValue = mGraphs[chartLine[i][0]]->dataMainValue(dx);
+            graphValue = mGraphs[chartLine[i][mainGraph[i]]]->dataMainValue(dx);
         }
+        graphValue=mGraphs[chartLine[i][mainGraph[i]]]->visible()?graphValue:0;
         mTags[i]->updatePosition(graphValue);
         mTags[i]->setText(QString::number(graphValue));
         customplot[i]->replot();
@@ -380,8 +538,11 @@ void MainWindow::on_btnStart_clicked()
 {
     if(status->isrunning==false)
     {
-        for(int i=0;i<12;i++)
+        for(int i=0;i<21;i++)
+        {
             mSeries[i]->clear();
+            mGraphs[i]->data()->clear();
+        }
         ui->btnStart->setText("Stop");
         status->isrunning=true;
         timer->start();

@@ -52,6 +52,8 @@ private:
     QCPGraph * mGraphs[21];
     QString SeriesName[21]={"Xaccel","Yaccel","Zaccel","Xgyro","Ygyro","Zgyro","Xspeed","Yspeed","Zspeed","Xdist","Ydist","Zdist","Xangle","Yangle","Zangle","XaccelT","YaccelT","ZaccelT","XgyroT","YgyroT","ZgyroT"};
     int maxValue[4]={-0xfffffff,-0xfffffff,-0xfffffff,-0xfffffff},minValue[4]={0xfffffff,0xfffffff,0xfffffff,0xfffffff};
+    int mainGraph[4]={0};
+    int plotSelect=0;
 private slots:
     void timerSlot();
     void timerSlot_customplot();
@@ -63,6 +65,14 @@ private slots:
     void uart_connected();
     void on_btnStart_clicked();
     void handleMarkerClicked();
+    void contextMenuRequest(QPoint);
+    void legendDoubleClick(QCPLegend*,QCPAbstractLegendItem*);
+    void moveLegend();
+    void removeSelectedGraph();
+    void removeAllGraphs();
+    void selectionChanged();
+    void applyMainGraph();
+    void setLineVisible();
 
 signals:
     void closed();
