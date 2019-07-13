@@ -80,7 +80,8 @@ private slots:
     void on_btnFlash_clicked();
 
 signals:
-    void closed();
+    void port_started(QString,int);
+    void port_closed();
 };
 
 #endif // MAINWINDOW_H

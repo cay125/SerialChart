@@ -2,12 +2,12 @@
 #include "status.h"
 SerialPort::SerialPort(QObject *parent) : QObject(parent)
 {
-//    my_thread = new QThread();
-//    port = new QSerialPort();
+    my_thread = new QThread();
+    port = new QSerialPort();
 //    init_port();
-//    this->moveToThread(my_thread);
-//    port->moveToThread(my_thread);
-//    my_thread->start();  //启动线程
+    this->moveToThread(my_thread);
+    port->moveToThread(my_thread);
+    my_thread->start();  //启动线程
 }
 
 SerialPort::~SerialPort()
@@ -40,8 +40,8 @@ void SerialPort::init_port()
 }
 void SerialPort::start_port(QString portname, int baudrate)
 {
-    my_thread = new QThread();
-    port = new QSerialPort();
+//    my_thread = new QThread();
+//    port = new QSerialPort();
     init_port();
     port->setPortName(portname);
     port->setBaudRate(baudrate);
@@ -49,9 +49,9 @@ void SerialPort::start_port(QString portname, int baudrate)
     {
         qDebug() << "Port have been opened";
         connect(port, SIGNAL(readyRead()), this, SLOT(handle_data())); //Qt::DirectConnection
-        this->moveToThread(my_thread);
-        port->moveToThread(my_thread);
-        my_thread->start();  //启动线程
+//        this->moveToThread(my_thread);
+//        port->moveToThread(my_thread);
+//        my_thread->start();  //启动线程
         emit connected();
     }
     else
@@ -62,11 +62,11 @@ void SerialPort::start_port(QString portname, int baudrate)
 void SerialPort::stop_port()
 {
     port->close();
-    port->deleteLater();
-    my_thread->quit();
-    my_thread->wait();
-    my_thread->deleteLater();
-    delete port;
+//    port->deleteLater();
+//    my_thread->quit();
+//    my_thread->wait();
+//    my_thread->deleteLater();
+//    delete port;
     qDebug() << "port have been closed";
 }
 

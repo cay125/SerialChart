@@ -47,7 +47,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent),ui(new Ui::MainWin
     uart=new SerialPort();
     connect(uart,SIGNAL(connected()),this,SLOT(uart_connected()),Qt::QueuedConnection);
 //    connect(uart,SIGNAL(receive_data(QByteArray)),this,SLOT(on_receive_data(QByteArray)), Qt::QueuedConnection);
-    connect(this,SIGNAL(closed()),uart,SLOT(stop_port()));
+    connect(this,SIGNAL(port_closed()),uart,SLOT(stop_port()));
+    connect(this,SIGNAL(port_started(QString,int)),uart,SLOT(start_port(QString,int)));
 
 //    series->setName("line1");
 //    chart->addSeries(series);
@@ -553,15 +554,21 @@ void MainWindow::on_btnOpenGL_clicked()
 void MainWindow::on_btnConnect_clicked()
 {
     if(status->isconnected == false)
-        uart->start_port(ui->ComBox->currentText(),ui->BaudBox->currentText().toInt());
+    {
+//        uart->start_port(ui->ComBox->currentText(),ui->BaudBox->currentText().toInt());
+        emit port_started(ui->ComBox->currentText(),ui->BaudBox->currentText().toInt());
+    }
     else
     {
         ui->btnConnect->setText("Connect");
         ui->btnStart->setEnabled(false);
+        ui->ComBox->setEnabled(true);
+        ui->BaudBox->setEnabled(true);
         timer->stop();
+        ui->btnStart->setText("Start");
         status->isconnected=false;
         status->isrunning=false;
-        emit closed();
+        emit port_closed();
     }
 }
 void MainWindow::uart_connected()
@@ -569,6 +576,8 @@ void MainWindow::uart_connected()
     status->isconnected=true;
     ui->btnConnect->setText("Disconnect");
     ui->btnStart->setEnabled(true);
+    ui->ComBox->setEnabled(false);
+    ui->BaudBox->setEnabled(false);
 }
 MainWindow::~MainWindow()
 {
@@ -584,6 +593,8 @@ void MainWindow::on_btnStart_clicked()
             mSeries[i]->clear();
             mGraphs[i]->data()->clear();
             PDataVec[i].clear();
+            PData[i]=0;
+            PDataBuffer[i]=0;
         }
         for(int i=0;i<4;i++)
         {
