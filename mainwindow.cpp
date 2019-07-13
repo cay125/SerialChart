@@ -22,8 +22,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent),ui(new Ui::MainWin
     }
     ui->lineLayout->addStretch();
 
-    status->isrunning=false;
-    status->isconnected=false;
     ui->btnStart->setEnabled(false);
 
     // add portname to combobox
@@ -42,12 +40,13 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent),ui(new Ui::MainWin
     ui->BaudBox->addItem("115200");
     ui->BaudBox->setCurrentIndex(3);
     ui->BaudBox->setFont(QFont("Microsoft YaHei", 9, QFont::Normal,false));
-    ui->FlashEdit->setText("100");
+    ui->FlashEdit->setText("5");
+    ui->FlashEdit->setValidator(new QIntValidator(0,1000));
     ui->FlashEdit->setFont(QFont("Microsoft YaHei", 9, QFont::Normal,false));
 
     uart=new SerialPort();
     connect(uart,SIGNAL(connected()),this,SLOT(uart_connected()),Qt::QueuedConnection);
-    connect(uart,SIGNAL(receive_data(QByteArray)),this,SLOT(on_receive_data(QByteArray)), Qt::QueuedConnection);
+//    connect(uart,SIGNAL(receive_data(QByteArray)),this,SLOT(on_receive_data(QByteArray)), Qt::QueuedConnection);
     connect(this,SIGNAL(closed()),uart,SLOT(stop_port()));
 
 //    series->setName("line1");
@@ -212,7 +211,7 @@ void MainWindow::removeAllGraphs()
         {
             mGraphs[chartLine[plotSelect][i]]->setVisible(false);
             QCPPlottableLegendItem *plItem = qobject_cast<QCPPlottableLegendItem*>(customplot[plotSelect]->legend->item(i));
-            plItem->setTextColor(QColor(0,0,0,plItem->plottable()->visible()?255:100));
+            plItem->setTextColor(QColor(180,180,180));
         }
     }
 }
@@ -223,7 +222,7 @@ void MainWindow::applyMainGraph()
         mainGraph[plotSelect] = contextAction->data().toInt();
         mGraphs[chartLine[plotSelect][mainGraph[plotSelect]]]->setVisible(true);
         QCPPlottableLegendItem *item = customplot[plotSelect]->legend->itemWithPlottable(mGraphs[chartLine[plotSelect][mainGraph[plotSelect]]]);
-        item->setTextColor(QColor(0,0,0,item->plottable()->visible()?255:100));
+        item->setTextColor(QColor(0,0,0));
         mTags[plotSelect]->setPen(mGraphs[chartLine[plotSelect][mainGraph[plotSelect]]]->pen());
     }
 }
@@ -233,7 +232,8 @@ void MainWindow::setLineVisible()
     {
         int index = contextAction->data().toInt();
         mGraphs[chartLine[plotSelect][index]]->setVisible(!mGraphs[chartLine[plotSelect][index]]->visible());
-        customplot[plotSelect]->legend->item(index)->setTextColor(QColor(0,0,0,mGraphs[chartLine[plotSelect][index]]->visible()?255:100));
+        int colorRGB=mGraphs[chartLine[plotSelect][index]]->visible()?0:180;
+        customplot[plotSelect]->legend->item(index)->setTextColor(QColor(colorRGB,colorRGB,colorRGB));
 //        if(!mGraphs[chartLine[plotSelect][index]]->visible())
 //        {
 //            customplot[plotSelect]->legend->item(index)->setSelected(false);
@@ -301,6 +301,7 @@ void MainWindow::moveLegend()
 }
 void MainWindow::on_receive_data(QByteArray data)
 {
+    static int receive_data_cnt=0;
     for(int i=0;i<6;i++)
         PData[i]=((int)((uint8_t)(data.at(i*4))<<24))|((int)((uint8_t)(data.at(i*4+1))<<16))|((int)((uint8_t)(data.at(i*4+2))<<8))|((int)((uint8_t)(data.at(i*4+3))));
     for(int i=0;i<6;i++)
@@ -310,6 +311,18 @@ void MainWindow::on_receive_data(QByteArray data)
         PData[i+6]+=PData[i];
 //        PData[i+9]+=PData[i+6];
         PData[i+12]+=PData[i+3];
+    }
+    for(int i=0;i<21;i++)
+        PDataBuffer[i]+=PData[i];
+    receive_data_cnt++;
+    if(receive_data_cnt>=flashRate)
+    {
+        for(int i=0;i<21;i++)
+        {
+            PDataVec[i].append(1.0*PDataBuffer[i]/receive_data_cnt);
+            PDataBuffer[i]=0;
+        }
+        receive_data_cnt=0;
     }
     //data.clear();
     //qDebug() << "main handing thread is:" << QThread::currentThreadId();
@@ -380,17 +393,38 @@ void MainWindow::ReadError(QAbstractSocket::SocketError)
 }
 void MainWindow::timerSlot_customplot()
 {
-    static int dx=0, dataTextUpdateCnt=0;
+    static int dataTextUpdateCnt=0;
     dataTextUpdateCnt++;
+    int index=mGraphs[0]->dataCount()-1;
+    double lastX=index>=0?mGraphs[0]->dataMainKey(index):0;
     for(int cnt=0;cnt<21;cnt++)
     {
         if(dataTextUpdateCnt>=3)
             dataEdit[cnt]->setText(QString::number(PData[cnt]));
         // calculate and add a new data point to each graph:
-        mGraphs[cnt]->addData(dx, PData[cnt]);
-        if(dx > XRANGE)
+        //mGraphs[cnt]->addData(dx, PData[cnt]);
+        QVector<double> xPos;
+        int len=PDataVec[cnt].size();
+        if(len!=0)
         {
-            mGraphs[cnt]->data()->remove(dx-XRANGE);
+            for(int j=1;j<=len;j++)
+            {
+//                mGraphs[cnt]->addData(j*dx_len/len+lastX,PDataVec[cnt][j-1]);
+//                mGraphs[cnt]->addData(dx_len+lastX,PData[cnt]);
+                xPos.append(j*dx_len/len+lastX);
+            }
+            mGraphs[cnt]->addData(xPos,PDataVec[cnt]);
+        }
+        else
+        {
+            mGraphs[cnt]->addData(lastX+dx_len,index>=0?mGraphs[cnt]->dataMainValue(index):0);
+        }
+        PDataVec[cnt].clear();
+        if((lastX+dx_len) > XRANGE)
+        {
+//            for(int j=0;j<len;j++)
+//                mGraphs[cnt]->data()->remove(mGraphs[cnt]->dataMainKey(0));
+            mGraphs[cnt]->data()->removeBefore(lastX+dx_len-XRANGE);
         }
 //        mGraphs[cnt]->rescaleValueAxis(true, true);
     }
@@ -400,22 +434,27 @@ void MainWindow::timerSlot_customplot()
     {
         mGraphs[chartLine[i][mainGraph[i]]]->rescaleValueAxis(false,true);
         double graphValue;
-        if(dx>XRANGE)
+        if((lastX+dx_len)>XRANGE)
         {
             customplot[i]->xAxis->rescale();
             customplot[i]->xAxis->setRange(customplot[i]->xAxis->range().upper, XRANGE, Qt::AlignRight);
-            graphValue = mGraphs[chartLine[i][mainGraph[i]]]->dataMainValue(XRANGE);
+//            graphValue = mGraphs[chartLine[i][mainGraph[i]]]->dataMainValue(XRANGE);
         }
-        else
-        {
-            graphValue = mGraphs[chartLine[i][mainGraph[i]]]->dataMainValue(dx);
-        }
+//        else
+//        {
+//            graphValue = mGraphs[chartLine[i][mainGraph[i]]]->dataMainValue(dx);
+//        }
+        graphValue=mGraphs[chartLine[i][mainGraph[i]]]->dataMainValue(mGraphs[chartLine[i][mainGraph[i]]]->dataCount()-1);
         graphValue=mGraphs[chartLine[i][mainGraph[i]]]->visible()?graphValue:0;
         mTags[i]->updatePosition(graphValue);
         mTags[i]->setText(QString::number(graphValue));
         customplot[i]->replot();
     }
-    dx++;
+//    qDebug()<<"count"<<mGraphs[0]->dataCount();
+//    qDebug()<<"main "<<mGraphs[0]->dataMainKey(0);
+//    qDebug()<<"sorted "<<mGraphs[0]->dataSortKey(0);
+//    qDebug()<<"main v "<<mGraphs[0]->dataMainValue(0);
+//    dx+=dx_len;
 }
 void MainWindow::timerSlot()
 {
@@ -505,9 +544,11 @@ void MainWindow::timerSlot()
 void MainWindow::on_btnOpenGL_clicked()
 {
     static bool flag=true;
-    for(int i=0;i<12;i++)
+    for(int i=0;i<21;i++)
         mSeries[i]->setUseOpenGL(flag);
     flag=1-flag;
+    for(int i=0;i<4;i++)
+        customplot[i]->setOpenGl(!customplot[i]->openGl());
 }
 void MainWindow::on_btnConnect_clicked()
 {
@@ -542,13 +583,21 @@ void MainWindow::on_btnStart_clicked()
         {
             mSeries[i]->clear();
             mGraphs[i]->data()->clear();
+            PDataVec[i].clear();
+        }
+        for(int i=0;i<4;i++)
+        {
+            customplot[i]->xAxis->setRange(0,XRANGE);
+            customplot[i]->yAxis->setRange(-10,10);
         }
         ui->btnStart->setText("Stop");
         status->isrunning=true;
+        connect(uart,SIGNAL(receive_data(QByteArray)),this,SLOT(on_receive_data(QByteArray)), Qt::QueuedConnection);
         timer->start();
     }
     else
     {
+        disconnect(uart,SIGNAL(receive_data(QByteArray)),this,SLOT(on_receive_data(QByteArray)));
         ui->btnStart->setText("Start");
         status->isrunning=false;
         timer->stop();
@@ -618,4 +667,13 @@ void MainWindow::handleMarkerClicked()
             break;
         }
     }
+}
+
+void MainWindow::on_btnFlash_clicked()
+{
+    int trate=ui->FlashEdit->text().toInt();
+    if(trate!=0)
+        flashRate=trate;
+    else
+        QMessageBox::information(this,"Warning","Invalid Input(flash rate should be larger than zero)");
 }

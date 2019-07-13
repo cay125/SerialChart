@@ -45,7 +45,7 @@ private:
     SerialPort *uart;
     Status *status;
     quint16 count;
-    int PData[21]={0};
+    int PData[21]={0},PDataBuffer[21]={0};
     QVector<int> chartLine[4];
     int SeriesIndex[21]={0,0,0,1,1,1,2,2,2,2,2,2,1,1,1,3,3,3,3,3,3};
     QLineSeries *mSeries[21];
@@ -53,7 +53,10 @@ private:
     QString SeriesName[21]={"Xaccel","Yaccel","Zaccel","Xgyro","Ygyro","Zgyro","Xspeed","Yspeed","Zspeed","Xdist","Ydist","Zdist","Xangle","Yangle","Zangle","XaccelT","YaccelT","ZaccelT","XgyroT","YgyroT","ZgyroT"};
     int maxValue[4]={-0xfffffff,-0xfffffff,-0xfffffff,-0xfffffff},minValue[4]={0xfffffff,0xfffffff,0xfffffff,0xfffffff};
     int mainGraph[4]={0};
-    int plotSelect=0;
+    int plotSelect=0,dataCnt=0;
+    QVector<double> PDataVec[21];
+    int dx=0;double dx_len=2;
+    int flashRate=5;
 private slots:
     void timerSlot();
     void timerSlot_customplot();
@@ -73,6 +76,8 @@ private slots:
     void selectionChanged();
     void applyMainGraph();
     void setLineVisible();
+
+    void on_btnFlash_clicked();
 
 signals:
     void closed();

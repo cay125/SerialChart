@@ -216,7 +216,7 @@
          </widget>
         </item>
         <item>
-         <widget class="QPushButton" name="btnAddChart">
+         <widget class="QPushButton" name="btnFlash">
           <property name="maximumSize">
            <size>
             <width>170</width>
@@ -229,7 +229,7 @@
            </font>
           </property>
           <property name="text">
-           <string>AddChart</string>
+           <string>ChangeFlashRate</string>
           </property>
          </widget>
         </item>
@@ -256,7 +256,7 @@
          <property name="geometry">
           <rect>
            <x>0</x>
-           <y>-61</y>
+           <y>0</y>
            <width>151</width>
            <height>580</height>
           </rect>
