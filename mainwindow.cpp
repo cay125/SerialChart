@@ -12,15 +12,23 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent),ui(new Ui::MainWin
     setAutoFillBackground(true);
     setPalette(p);
 
-    for(int i=0;i<21;i++)
+    for(int i=0;i<42;i++)
     {
         dataEdit[i]=new QLineEdit();
         dataEdit[i]->setMaximumWidth(70);
         dataEdit[i]->setReadOnly(true);
         dataEdit[i]->setText("NULL");
+
+        dataLabel[i]=new QLabel();
+        dataLabel[i]->setMinimumHeight(20);
+        dataLabel[i]->setText((i%2)==0?SeriesName[i/2]:"Var"+SeriesName[i/2]);
+        dataLabel[i]->setFont(QFont("Microsoft YaHei", 9, QFont::Normal,false));
+
         ui->lineLayout->addWidget(dataEdit[i]);
+        ui->labelLayout->addWidget(dataLabel[i]);
     }
     ui->lineLayout->addStretch();
+    ui->labelLayout->addStretch();
 
     ui->btnStart->setEnabled(false);
 
@@ -314,7 +322,13 @@ void MainWindow::on_receive_data(QByteArray data)
         PData[i+12]+=PData[i+3];
     }
     for(int i=0;i<21;i++)
+    {
+        if(dataCnt!=0)
+            dataTotalVariance[i]=onlineVariance(PData[i],i);
+        dataTotalSum[i]+=PData[i];
         PDataBuffer[i]+=PData[i];
+    }
+    dataCnt++;
     receive_data_cnt++;
     if(receive_data_cnt>=flashRate)
     {
@@ -325,6 +339,7 @@ void MainWindow::on_receive_data(QByteArray data)
         }
         receive_data_cnt=0;
     }
+    dataCnt++;
     //data.clear();
     //qDebug() << "main handing thread is:" << QThread::currentThreadId();
     //qDebug() << "main: " << data.toHex();
@@ -401,7 +416,10 @@ void MainWindow::timerSlot_customplot()
     for(int cnt=0;cnt<21;cnt++)
     {
         if(dataTextUpdateCnt>=3)
-            dataEdit[cnt]->setText(QString::number(PData[cnt]));
+        {
+            dataEdit[cnt*2]->setText(QString::number(PData[cnt]));
+            dataEdit[cnt*2+1]->setText(QString::number(dataTotalVariance[cnt],'f',2));
+        }
         // calculate and add a new data point to each graph:
         //mGraphs[cnt]->addData(dx, PData[cnt]);
         QVector<double> xPos;
@@ -448,7 +466,7 @@ void MainWindow::timerSlot_customplot()
         graphValue=mGraphs[chartLine[i][mainGraph[i]]]->dataMainValue(mGraphs[chartLine[i][mainGraph[i]]]->dataCount()-1);
         graphValue=mGraphs[chartLine[i][mainGraph[i]]]->visible()?graphValue:0;
         mTags[i]->updatePosition(graphValue);
-        mTags[i]->setText(QString::number(graphValue));
+        mTags[i]->setText(QString::number((int)graphValue));
         customplot[i]->replot();
     }
 //    qDebug()<<"count"<<mGraphs[0]->dataCount();
@@ -595,11 +613,16 @@ void MainWindow::on_btnStart_clicked()
             PDataVec[i].clear();
             PData[i]=0;
             PDataBuffer[i]=0;
+            dataTotalSum[i]=0;
+            dataTotalVariance[i]=0;
         }
+        dataCnt=0;
         for(int i=0;i<4;i++)
         {
             customplot[i]->xAxis->setRange(0,XRANGE);
             customplot[i]->yAxis->setRange(-10,10);
+            customplot[i]->setInteraction(QCP::iRangeZoom,false);
+            customplot[i]->setInteraction(QCP::iRangeDrag,false);
         }
         ui->btnStart->setText("Stop");
         status->isrunning=true;
@@ -612,6 +635,11 @@ void MainWindow::on_btnStart_clicked()
         ui->btnStart->setText("Start");
         status->isrunning=false;
         timer->stop();
+        for(int i=0;i<4;i++)
+        {
+            customplot[i]->setInteraction(QCP::iRangeZoom,true);
+            customplot[i]->setInteraction(QCP::iRangeDrag,true);
+        }
     }
 }
 void MainWindow::connectMarkers()
@@ -687,4 +715,12 @@ void MainWindow::on_btnFlash_clicked()
         flashRate=trate;
     else
         QMessageBox::information(this,"Warning","Invalid Input(flash rate should be larger than zero)");
+}
+double MainWindow::onlineVariance(double input,int index)
+{
+    double newAve=1.0*(dataTotalSum[index]+input)/(dataCnt+1);
+    double oldAve=1.0*dataTotalSum[index]/dataCnt;
+    double t1=dataCnt*(dataTotalVariance[index]+(newAve-oldAve)*(newAve-oldAve));
+    double t2=(newAve-input)*(newAve-input);
+    return (t1+t2)/(dataCnt+1);
 }

@@ -12,6 +12,7 @@
 #include <QChart>
 #include <QTimer>
 #include <QLineEdit>
+#include <QLabel>
 #include "qcustomplot.h"
 #include "axistag.h"
 #include "serialport.h"
@@ -19,7 +20,7 @@
 
 QT_CHARTS_USE_NAMESPACE
 namespace Ui {class MainWindow;}
-#define XRANGE 200
+#define XRANGE 10000
 class MainWindow : public QMainWindow
 {
     Q_OBJECT
@@ -30,12 +31,15 @@ public:
 
 private:
     void connectMarkers();
+    double onlineVariance(double,int);
     Ui::MainWindow *ui;
     QPalette p;
     QChartView *chartView[4];
     QCustomPlot *customplot[4];
     AxisTag *mTags[4];
-    QLineEdit *dataEdit[21];
+    QLineEdit *dataEdit[42];
+    QLabel *dataLabel[42];
+    QLabel *varianceLabel[21];
     QLineSeries *series;
     QChart *chart[4];
     QTimer *timer;
@@ -54,6 +58,7 @@ private:
     int maxValue[4]={-0xfffffff,-0xfffffff,-0xfffffff,-0xfffffff},minValue[4]={0xfffffff,0xfffffff,0xfffffff,0xfffffff};
     int mainGraph[4]={0};
     int plotSelect=0,dataCnt=0;
+    double dataTotalSum[21]={0},dataTotalVariance[21]={0};
     QVector<double> PDataVec[21];
     int dx=0;double dx_len=2;
     int flashRate=5;
