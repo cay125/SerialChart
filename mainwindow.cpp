@@ -59,6 +59,9 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent),ui(new Ui::MainWin
     ui->FlashEdit->setText("250");
     ui->FlashEdit->setValidator(new QIntValidator(0,1000));
     ui->FlashEdit->setFont(QFont("Microsoft YaHei", 9, QFont::Normal,false));
+    ui->GraEdit->setText("9.8");
+    ui->GraEdit->setValidator(new QDoubleValidator());
+    ui->GraEdit->setFont(QFont("Microsoft YaHei", 9, QFont::Normal,false));
 
     uart=new SerialPort();
     connect(uart,SIGNAL(connected()),this,SLOT(uart_connected()),Qt::QueuedConnection);
@@ -439,7 +442,7 @@ void MainWindow::timerSlot_data()
         for(int i=0;i<21;i++)
         {
            if(i<3)
-               PDataVec[i].append(1.0*PDataBuffer[i]/receive_data_cnt*0.0000001*9.8);
+               PDataVec[i].append(1.0*PDataBuffer[i]/receive_data_cnt*0.0000001*gra_accel);
            else if(i>=3 && i<6)
                PDataVec[i].append(1.0*PDataBuffer[i]/receive_data_cnt*0.000001*3600);
            else
@@ -632,12 +635,13 @@ void MainWindow::timerSlot()
 }
 void MainWindow::on_btnOpenGL_clicked()
 {
-    static bool flag=true;
+//    static bool flag=true;
 //    for(int i=0;i<21;i++)
 //        mSeries[i]->setUseOpenGL(flag);
-    flag=1-flag;
-    for(int i=0;i<6;i++)
-        customplot[i]->setOpenGl(!customplot[i]->openGl());
+//    flag=1-flag;
+//    for(int i=0;i<6;i++)
+//        customplot[i]->setOpenGl(!customplot[i]->openGl());
+    gra_accel=ui->GraEdit->text().toDouble();
 }
 void MainWindow::on_btnConnect_clicked()
 {

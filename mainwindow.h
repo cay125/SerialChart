@@ -69,6 +69,7 @@ private:
     int flashRate=250;
     int receive_data_cnt=0;
     QTimer *timer_data;
+    double gra_accel=9.8;
 private slots:
     void timerSlot_data();
     void timerSlot();
