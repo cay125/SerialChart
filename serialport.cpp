@@ -110,7 +110,7 @@ void SerialPort::handle_data()
             {
                 state=0;
 //                qDebug() << "emit signal";
-                if((uint8_t)(pointData.at(33))==(uint8_t)0x0e && (uint8_t)(pointData.at(34))==(uint8_t)0x0f)
+//                if((uint8_t)(pointData.at(33))==(uint8_t)0x0e && (uint8_t)(pointData.at(34))==(uint8_t)0x0f)
                     emit receive_data(pointData);
             }
         }

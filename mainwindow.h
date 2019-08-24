@@ -56,6 +56,7 @@ private:
     int SeriesIndex[21]={0,1,2,3,4,5,2,2,2,2,2,2,1,1,1,3,3,3,3,3,3};
     QLineSeries *mSeries[21];
     QCPGraph * mGraphs[21];
+    QString SerialUnit[6]={"(m/s^2)","(m/s^2)","(m/s^2)","(deg/h)","(deg/h)","(deg/h)"};
     QString SeriesName[21]={"Acc_X","Acc_Y","Acc_Z","Gyro_X","Gyro_Y","Gyro_Z","Xspeed","Yspeed","Zspeed","Xdist","Ydist","Zdist","Xangle","Yangle","Zangle","Acc_Temp_X","Acc_Temp_Y","Acc_Temp_Z","Gyro_Temp_X","Gyro_Temp_Y","Gyro_Temp_Z"};
 //    QString SeriesName[21]={"Acc_X","Acc_Y","Acc_Z","Gyro_X","Gyro_Y","Gyro_Z","Acc_Temp_X","Acc_Temp_Y","Acc_Temp_Z","Gyro_Temp_X","Gyro_Temp_Y","Gyro_Temp_Z","Yspeed","Zspeed","Xdist","Ydist","Zdist","Xangle","Yangle","Zangle","XaccelT"};
     int maxValue[4]={-0xfffffff,-0xfffffff,-0xfffffff,-0xfffffff},minValue[4]={0xfffffff,0xfffffff,0xfffffff,0xfffffff};
@@ -65,8 +66,11 @@ private:
     double data_calib[21]={0};
     QVector<double> PDataVec[21];
     int dx=0;double dx_len=2;
-    int flashRate=5;
+    int flashRate=250;
+    int receive_data_cnt=0;
+    QTimer *timer_data;
 private slots:
+    void timerSlot_data();
     void timerSlot();
     void timerSlot_customplot();
     void ReadData();

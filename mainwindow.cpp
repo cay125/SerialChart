@@ -3,7 +3,7 @@
 #include "serialport.h"
 #include <QSerialPortInfo>
 #include "status.h"
-MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent),ui(new Ui::MainWindow),series(new QLineSeries),timer(new QTimer),status(new Status)
+MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent),ui(new Ui::MainWindow),series(new QLineSeries),timer(new QTimer),status(new Status),timer_data(new QTimer)
 {
 //    showMaximized();
     //set white background color
@@ -24,9 +24,9 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent),ui(new Ui::MainWin
         if(i<6)
             dataLabel[i]->setText(SeriesName[i]);
         else if(i>=6 && i<9)
-            dataLabel[i]->setText(SeriesName[i-6].left(4) + "STD_");
+            dataLabel[i]->setText(SeriesName[i-6].left(4) + "STD_" + SeriesName[i-6].right(1));
         else if(i>=9 && i<12)
-            dataLabel[i]->setText(SeriesName[i-6].left(5) + "STD_");
+            dataLabel[i]->setText(SeriesName[i-6].left(5) + "STD_" + SeriesName[i-6].right(1));
         else
             dataLabel[i]->setText(SeriesName[i-12+15]);
         dataLabel[i]->setFont(QFont("Microsoft YaHei", 9, QFont::Normal,false));
@@ -53,9 +53,10 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent),ui(new Ui::MainWin
     ui->BaudBox->addItem("19200");
     ui->BaudBox->addItem("38400");
     ui->BaudBox->addItem("115200");
+    ui->BaudBox->addItem("230400");
     ui->BaudBox->setCurrentIndex(3);
     ui->BaudBox->setFont(QFont("Microsoft YaHei", 9, QFont::Normal,false));
-    ui->FlashEdit->setText("5");
+    ui->FlashEdit->setText("250");
     ui->FlashEdit->setValidator(new QIntValidator(0,1000));
     ui->FlashEdit->setFont(QFont("Microsoft YaHei", 9, QFont::Normal,false));
 
@@ -97,7 +98,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent),ui(new Ui::MainWin
 
         customplot[SeriesIndex[i]]->addGraph();
         mGraphs[i]=customplot[SeriesIndex[i]]->graph();
-        mGraphs[i]->setName(SeriesName[i]);
+        mGraphs[i]->setName(SeriesName[i]+SerialUnit[i]);
         mGraphs[i]->setPen(pen[color[SeriesIndex[i]]++]);
         QCPSelectionDecorator *decorator=new QCPSelectionDecorator();
         QPen tpen;
@@ -172,6 +173,9 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent),ui(new Ui::MainWin
 
 //    connect(timer, SIGNAL(timeout()), this, SLOT(timerSlot()));
     connect(timer, SIGNAL(timeout()), this, SLOT(timerSlot_customplot()));
+    connect(timer_data, SIGNAL(timeout()), this, SLOT(timerSlot_data()));
+    timer_data->setInterval((int)(1000.0/flashRate));
+    timer_data->start();
     timer->setInterval(30);
     //timer->start();
 
@@ -320,7 +324,7 @@ void MainWindow::moveLegend()
 }
 void MainWindow::on_receive_data(QByteArray data)
 {
-    static int receive_data_cnt=0;
+    //static int receive_data_cnt=0;
     for(int i=0;i<6;i++)
         PData[i]=((int)((uint8_t)(data.at(i*4+3))<<24))|((int)((uint8_t)(data.at(i*4+2))<<16))|((int)((uint8_t)(data.at(i*4+1))<<8))|((int)((uint8_t)(data.at(i*4+0))));
     for(int i=0;i<6;i++)
@@ -332,32 +336,34 @@ void MainWindow::on_receive_data(QByteArray data)
         PData[i+12]+=PData[i+3];
     }
     for(int i=0;i<21;i++)
-    {
-        if(i<3)
-            data_calib[i]=PData[i]*0.0000001*9.8;
-        else if(i>=3 && i<6)
-            data_calib[i]=PData[i]*0.000001*3600;
-        if(dataCnt!=0)
-            dataTotalVariance[i]=onlineVariance(data_calib[i],i);
-        dataTotalSum[i]+=data_calib[i];
         PDataBuffer[i]+=PData[i];
-    }
-    dataCnt++;
+//    for(int i=0;i<21;i++)
+//    {
+//        if(i<3)
+//            data_calib[i]=PData[i]*0.0000001*9.8;
+//        else if(i>=3 && i<6)
+//            data_calib[i]=PData[i]*0.000001*3600;
+//        if(dataCnt!=0)
+//            dataTotalVariance[i]=onlineVariance(data_calib[i],i);
+//        dataTotalSum[i]+=data_calib[i];
+//        PDataBuffer[i]+=PData[i];
+//    }
+//    dataCnt++;
     receive_data_cnt++;
-    if(receive_data_cnt>=flashRate)
-    {
-        for(int i=0;i<21;i++)
-        {
-            if(i<3)
-                PDataVec[i].append(1.0*PDataBuffer[i]/receive_data_cnt*0.0000001*9.8);
-            else if(i>=3 && i<6)
-                PDataVec[i].append(1.0*PDataBuffer[i]/receive_data_cnt*0.000001*3600);
-            else
-                PDataVec[i].append(1.0*PDataBuffer[i]/receive_data_cnt);
-            PDataBuffer[i]=0;
-        }
-        receive_data_cnt=0;
-    }
+//    if(receive_data_cnt>=flashRate)
+//    {
+//        for(int i=0;i<21;i++)
+//        {
+//            if(i<3)
+//                PDataVec[i].append(1.0*PDataBuffer[i]/receive_data_cnt*0.0000001*9.8);
+//            else if(i>=3 && i<6)
+//                PDataVec[i].append(1.0*PDataBuffer[i]/receive_data_cnt*0.000001*3600);
+//            else
+//                PDataVec[i].append(1.0*PDataBuffer[i]/receive_data_cnt);
+//            PDataBuffer[i]=0;
+//        }
+//        receive_data_cnt=0;
+//    }
     //dataCnt++;
     //data.clear();
     //qDebug() << "main handing thread is:" << QThread::currentThreadId();
@@ -426,6 +432,30 @@ void MainWindow::ReadError(QAbstractSocket::SocketError)
     msgBox.setText(tr("failed to connect server because %1").arg(tcpClient->errorString()));
     msgBox.exec();
 }
+void MainWindow::timerSlot_data()
+{
+    if(receive_data_cnt>0)
+    {
+        for(int i=0;i<21;i++)
+        {
+           if(i<3)
+               PDataVec[i].append(1.0*PDataBuffer[i]/receive_data_cnt*0.0000001*9.8);
+           else if(i>=3 && i<6)
+               PDataVec[i].append(1.0*PDataBuffer[i]/receive_data_cnt*0.000001*3600);
+           else
+               PDataVec[i].append(1.0*PDataBuffer[i]/receive_data_cnt);
+           PDataBuffer[i]=0;
+        }
+        for(int i=0;i<21;i++)
+        {
+            if(dataCnt!=0)
+                dataTotalVariance[i]=onlineVariance(PDataVec[i][PDataVec[i].size()-1],i);
+            dataTotalSum[i]+=PDataVec[i][PDataVec[i].size()-1];
+        }
+        dataCnt++;
+        receive_data_cnt=0;
+    }
+}
 void MainWindow::timerSlot_customplot()
 {
     static int dataTextUpdateCnt=0;
@@ -455,10 +485,10 @@ void MainWindow::timerSlot_customplot()
         }
         else
         {
-            mGraphs[cnt]->addData(lastX+dx_len,index>=0?mGraphs[cnt]->dataMainValue(index):0);
+            //mGraphs[cnt]->addData(lastX+dx_len,index>=0?mGraphs[cnt]->dataMainValue(index):0);
         }
 //        PDataVec[cnt].clear();
-        if((lastX+dx_len) > XRANGE)
+        if((lastX+dx_len) > XRANGE && len!=0)
         {
 //            for(int j=0;j<len;j++)
 //                mGraphs[cnt]->data()->remove(mGraphs[cnt]->dataMainKey(0));
@@ -466,44 +496,49 @@ void MainWindow::timerSlot_customplot()
         }
 //        mGraphs[cnt]->rescaleValueAxis(true, true);
     }
-    for(int cnt=0;cnt<21;cnt++)
-        PDataVec[cnt].clear();
-    if(dataTextUpdateCnt>=3)
+//    for(int cnt=0;cnt<21;cnt++)
+//        PDataVec[cnt].clear();
+    if(dataTextUpdateCnt>=3 && PDataVec[0].size()!=0)
     {
         for(int cnt=0;cnt<18;cnt++)
         {
             if(cnt<6)
-                dataEdit[cnt]->setText(QString::number(data_calib[cnt],'f',2));
+                dataEdit[cnt]->setText(QString::number(PDataVec[cnt][PDataVec[cnt].size()-1],'f',4));
             else if(cnt>=6 && cnt <12)
-                dataEdit[cnt]->setText(QString::number(dataTotalVariance[cnt-6],'f',2));
+                dataEdit[cnt]->setText(QString::number(sqrt(dataTotalVariance[cnt-6]),'f',4));
             else
                 dataEdit[cnt]->setText(QString::number(PData[cnt-12+15]));
         }
         dataTextUpdateCnt=0;
     }
-    for(int i=0;i<6;i++)
+    if(PDataVec[0].size()!=0)
     {
-        mGraphs[i]->rescaleValueAxis(false,true);
-        double graphValue;
-        if((lastX+dx_len)>XRANGE)
+        for(int i=0;i<6;i++)
         {
-            customplot[i]->xAxis->rescale();
-            customplot[i]->xAxis->setRange(customplot[i]->xAxis->range().upper, XRANGE, Qt::AlignRight);
-//            graphValue = mGraphs[chartLine[i][mainGraph[i]]]->dataMainValue(XRANGE);
+            mGraphs[i]->rescaleValueAxis(false,true);
+            double graphValue;
+            if((lastX+dx_len)>XRANGE)
+            {
+                customplot[i]->xAxis->rescale();
+                customplot[i]->xAxis->setRange(customplot[i]->xAxis->range().upper, XRANGE, Qt::AlignRight);
+    //            graphValue = mGraphs[chartLine[i][mainGraph[i]]]->dataMainValue(XRANGE);
+            }
+    //        else
+    //        {
+    //            graphValue = mGraphs[chartLine[i][mainGraph[i]]]->dataMainValue(dx);
+    //        }
+            graphValue=mGraphs[i]->dataMainValue(mGraphs[i]->dataCount()-1);
+            graphValue=mGraphs[i]->visible()?graphValue:0;
+            mTags[i]->updatePosition(graphValue);
+            mTags[i]->setText(QString::number(graphValue,'f'));
+            double tag_ave=dataCnt>0?dataTotalSum[i]/dataCnt:0;
+            mAveTags[i]->updatePosition(tag_ave);
+            mAveTags[i]->setText(QString::number(tag_ave,'f'));
+            customplot[i]->replot();
         }
-//        else
-//        {
-//            graphValue = mGraphs[chartLine[i][mainGraph[i]]]->dataMainValue(dx);
-//        }
-        graphValue=mGraphs[i]->dataMainValue(mGraphs[i]->dataCount()-1);
-        graphValue=mGraphs[i]->visible()?graphValue:0;
-        mTags[i]->updatePosition(graphValue);
-        mTags[i]->setText(QString::number(graphValue,'f',2));
-        double tag_ave=dataCnt>0?dataTotalSum[i]/dataCnt:0;
-        mAveTags[i]->updatePosition(tag_ave);
-        mAveTags[i]->setText(QString::number(tag_ave,'f',2));
-        customplot[i]->replot();
     }
+    for(int cnt=0;cnt<21;cnt++)
+        PDataVec[cnt].clear();
 //    qDebug()<<"count"<<mGraphs[0]->dataCount();
 //    qDebug()<<"main "<<mGraphs[0]->dataMainKey(0);
 //    qDebug()<<"sorted "<<mGraphs[0]->dataSortKey(0);
@@ -653,7 +688,9 @@ void MainWindow::on_btnStart_clicked()
             PDataBuffer[i]=0;
             dataTotalSum[i]=0;
             dataTotalVariance[i]=0;
+            data_calib[i]=0;
         }
+        receive_data_cnt=0;
         dataCnt=0;
         for(int i=0;i<6;i++)
         {
@@ -750,9 +787,14 @@ void MainWindow::on_btnFlash_clicked()
 {
     int trate=ui->FlashEdit->text().toInt();
     if(trate!=0)
+    {
         flashRate=trate;
+        timer_data->setInterval((int)(1000.0/flashRate));
+    }
     else
-        QMessageBox::information(this,"Warning","Invalid Input(flash rate should be larger than zero)");
+    {
+        QMessageBox::information(this,"Warning","Invalid Input(flash rate should be larger than 0 and smaller than 300)");
+    }
 }
 double MainWindow::onlineVariance(double input,int index)
 {

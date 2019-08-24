@@ -31,7 +31,7 @@
            </font>
           </property>
           <property name="text">
-           <string>Scope</string>
+           <string>Sirius</string>
           </property>
          </widget>
         </item>
@@ -121,7 +121,7 @@
              </font>
             </property>
             <property name="text">
-             <string>FlashRate</string>
+             <string>FlashRate(HZ)</string>
             </property>
            </widget>
           </item>
@@ -159,7 +159,7 @@
           </property>
           <property name="maximumSize">
            <size>
-            <width>170</width>
+            <width>16777215</width>
             <height>16777215</height>
            </size>
           </property>
@@ -177,7 +177,7 @@
          <widget class="QPushButton" name="btnConnect">
           <property name="maximumSize">
            <size>
-            <width>170</width>
+            <width>16777215</width>
             <height>16777215</height>
            </size>
           </property>
@@ -195,7 +195,7 @@
          <widget class="QPushButton" name="btnStart">
           <property name="maximumSize">
            <size>
-            <width>170</width>
+            <width>16777215</width>
             <height>16777215</height>
            </size>
           </property>
@@ -219,7 +219,7 @@
          <widget class="QPushButton" name="btnFlash">
           <property name="maximumSize">
            <size>
-            <width>170</width>
+            <width>16777215</width>
             <height>16777215</height>
            </size>
           </property>
@@ -245,7 +245,7 @@
         </property>
         <property name="maximumSize">
          <size>
-          <width>170</width>
+          <width>220</width>
           <height>16777215</height>
          </size>
         </property>
@@ -256,15 +256,15 @@
          <property name="geometry">
           <rect>
            <x>0</x>
-           <y>-641</y>
-           <width>151</width>
-           <height>1160</height>
+           <y>0</y>
+           <width>197</width>
+           <height>600</height>
           </rect>
          </property>
          <property name="minimumSize">
           <size>
            <width>0</width>
-           <height>1160</height>
+           <height>600</height>
           </size>
          </property>
          <widget class="QWidget" name="verticalLayoutWidget_2">
@@ -272,7 +272,7 @@
            <rect>
             <x>10</x>
             <y>9</y>
-            <width>61</width>
+            <width>101</width>
             <height>1141</height>
            </rect>
           </property>
@@ -281,9 +281,9 @@
          <widget class="QWidget" name="verticalLayoutWidget_3">
           <property name="geometry">
            <rect>
-            <x>80</x>
+            <x>120</x>
             <y>10</y>
-            <width>101</width>
+            <width>71</width>
             <height>1141</height>
            </rect>
           </property>

@@ -12,7 +12,7 @@ QT       += printsupport
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
-TARGET = DigitalOscilloscope
+TARGET = Sirius
 TEMPLATE = app
 
 # The following define makes your compiler emit warnings if you use
