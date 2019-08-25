@@ -12,7 +12,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent),ui(new Ui::MainWin
     setAutoFillBackground(true);
     setPalette(p);
 
-    for(int i=0;i<18;i++)
+    for(int i=0;i<21;i++)
     {
         dataEdit[i]=new QLineEdit();
         dataEdit[i]->setMaximumWidth(70);
@@ -27,8 +27,10 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent),ui(new Ui::MainWin
             dataLabel[i]->setText(SeriesName[i-6].left(4) + "STD_" + SeriesName[i-6].right(1));
         else if(i>=9 && i<12)
             dataLabel[i]->setText(SeriesName[i-6].left(5) + "STD_" + SeriesName[i-6].right(1));
-        else
+        else if(i>=12 && i<18)
             dataLabel[i]->setText(SeriesName[i-12+15]);
+        else
+            dataLabel[i]->setText(SeriesName[i-18+12]);
         dataLabel[i]->setFont(QFont("Microsoft YaHei", 9, QFont::Normal,false));
 
         ui->lineLayout->addWidget(dataEdit[i]);
@@ -54,9 +56,9 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent),ui(new Ui::MainWin
     ui->BaudBox->addItem("38400");
     ui->BaudBox->addItem("115200");
     ui->BaudBox->addItem("230400");
-    ui->BaudBox->setCurrentIndex(3);
+    ui->BaudBox->setCurrentIndex(4);
     ui->BaudBox->setFont(QFont("Microsoft YaHei", 9, QFont::Normal,false));
-    ui->FlashEdit->setText("250");
+    ui->FlashEdit->setText("1");
     ui->FlashEdit->setValidator(new QIntValidator(0,1000));
     ui->FlashEdit->setFont(QFont("Microsoft YaHei", 9, QFont::Normal,false));
     ui->GraEdit->setText("9.8");
@@ -158,7 +160,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent),ui(new Ui::MainWin
         customplot[i]->xAxis->setTickLabels(false);
         customplot[i]->legend->setVisible(true);
         customplot[i]->legend->setFont(QFont("Microsoft YaHei", 9, QFont::Normal,false));
-        customplot[i]->axisRect()->insetLayout()->setInsetAlignment(0, Qt::AlignTop|Qt::AlignLeft);
+        customplot[i]->axisRect()->insetLayout()->setInsetAlignment(0, Qt::AlignTop|Qt::AlignRight);
         ui->mainLayout->addWidget(customplot[i],i,0);
     }
 
@@ -272,7 +274,7 @@ void MainWindow::contextMenuRequest(QPoint pos)
     QMenu *menu = new QMenu(this);
     menu->setAttribute(Qt::WA_DeleteOnClose);
     QCustomPlot* custom_chart = qobject_cast<QCustomPlot*> (sender());
-    for(int i=0;i<4;i++)
+    for(int i=0;i<6;i++)
     {
         if(custom_chart==customplot[i])
         {
@@ -442,11 +444,25 @@ void MainWindow::timerSlot_data()
         for(int i=0;i<21;i++)
         {
            if(i<3)
+           {
                PDataVec[i].append(1.0*PDataBuffer[i]/receive_data_cnt*0.0000001*gra_accel);
+           }
            else if(i>=3 && i<6)
+           {
                PDataVec[i].append(1.0*PDataBuffer[i]/receive_data_cnt*0.000001*3600);
+           }
+           else if(i>=12 && i<15)
+           {
+               angle_xyz[i-12]+=1.0*PDataVec[i-12+3][PDataVec[i-12+3].size()-1]/3600.0/flashRate;
+               if(PDataVec[i].size()==0)
+                   PDataVec[i].append(1.0*PDataVec[i-12+3][PDataVec[i-12+3].size()-1]/3600.0/flashRate);
+               else
+                   PDataVec[i].append(PDataVec[i][PDataVec[i].size()-1]+1.0*PDataVec[i-12+3][PDataVec[i-12+3].size()-1]/3600.0/flashRate);
+           }
            else
+           {
                PDataVec[i].append(1.0*PDataBuffer[i]/receive_data_cnt);
+           }
            PDataBuffer[i]=0;
         }
         for(int i=0;i<21;i++)
@@ -503,14 +519,16 @@ void MainWindow::timerSlot_customplot()
 //        PDataVec[cnt].clear();
     if(dataTextUpdateCnt>=3 && PDataVec[0].size()!=0)
     {
-        for(int cnt=0;cnt<18;cnt++)
+        for(int cnt=0;cnt<21;cnt++)
         {
             if(cnt<6)
                 dataEdit[cnt]->setText(QString::number(PDataVec[cnt][PDataVec[cnt].size()-1],'f',4));
             else if(cnt>=6 && cnt <12)
                 dataEdit[cnt]->setText(QString::number(sqrt(dataTotalVariance[cnt-6]),'f',4));
-            else
+            else if(cnt>=12 && cnt<18)
                 dataEdit[cnt]->setText(QString::number(PData[cnt-12+15]));
+            else
+                dataEdit[cnt]->setText(QString::number(angle_xyz[cnt-18],'f',4));
         }
         dataTextUpdateCnt=0;
     }
@@ -696,6 +714,8 @@ void MainWindow::on_btnStart_clicked()
         }
         receive_data_cnt=0;
         dataCnt=0;
+        for(int i=0;i<3;i++)
+            angle_xyz[i]=0;
         for(int i=0;i<6;i++)
         {
             customplot[i]->xAxis->setRange(0,XRANGE);
@@ -790,7 +810,7 @@ void MainWindow::handleMarkerClicked()
 void MainWindow::on_btnFlash_clicked()
 {
     int trate=ui->FlashEdit->text().toInt();
-    if(trate!=0)
+    if(trate>0 && trate<=300)
     {
         flashRate=trate;
         timer_data->setInterval((int)(1000.0/flashRate));
