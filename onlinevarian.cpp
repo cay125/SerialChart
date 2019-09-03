@@ -1,10 +1,13 @@
 #include "onlinevarian.h"
+#include <QDebug>
 
 onlineVarian::onlineVarian()
 {
 }
 double onlineVarian::addData(QVector<double> input)
 {
+    if(input.size()==0)
+        return currentVar;
     double sumInput=0;
     for(int i=0;i<input.size();i++)
         sumInput+=input[i];
@@ -31,6 +34,8 @@ double onlineVarian::addData(QVector<double> input)
 }
 double onlineVarian::removeData(QVector<double> input)
 {
+    if(input.size()==0)
+        return currentVar;
     double sumInput=0;
     for(int i=0;i<input.size();i++)
         sumInput+=input[i];
@@ -42,7 +47,7 @@ double onlineVarian::removeData(QVector<double> input)
     double meanNew=(dataTotalSum-sumInput)/(dataCnt-input.size());
     double t1=dataCnt*(currentVar+(meanNew-currentMean)*(meanNew-currentMean));
     double t2=input.size()*(varianceInput+(meanNew-meanInput)*(meanNew-meanInput));
-    currentVar=(t1-t2)/(dataCnt+input.size());
+    currentVar=(t1-t2)/(dataCnt-input.size());
     dataCnt-=input.size();
     dataTotalSum-=sumInput;
     currentMean=dataTotalSum/dataCnt;

@@ -515,10 +515,12 @@ void MainWindow::timerSlot_customplot()
         if((lastX+dx_len) > XRANGE && len!=0)
         {
             QVector<double> removeX;
-            for(int j=0;j<len;j++)
+            int j=0;
+            while(mGraphs[cnt]->dataMainKey(j)<(lastX+dx_len-XRANGE))
             {
                 //mGraphs[cnt]->data()->remove(mGraphs[cnt]->dataMainKey(0));
                 removeX.append(mGraphs[cnt]->dataMainValue(j));
+                j++;
             }
             onlineVar[cnt]->removeData(removeX);
             mGraphs[cnt]->data()->removeBefore(lastX+dx_len-XRANGE);
