@@ -17,6 +17,7 @@
 #include "axistag.h"
 #include "serialport.h"
 #include "status.h"
+#include "onlinevarian.h"
 
 QT_CHARTS_USE_NAMESPACE
 namespace Ui {class MainWindow;}
@@ -72,6 +73,7 @@ private:
     QTimer *timer_data;
     double gra_accel=9.8;
     double angle_xyz[3]={0};
+    onlineVarian *onlineVar[6];
 private slots:
     void timerSlot_data();
     void timerSlot();

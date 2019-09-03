@@ -35,6 +35,7 @@ SOURCES += \
         configuration.cpp \
         main.cpp \
         mainwindow.cpp \
+        onlinevarian.cpp \
         qcustomplot.cpp \
         serialport.cpp \
         status.cpp
@@ -43,6 +44,7 @@ HEADERS += \
         axistag.h \
         configuration.h \
         mainwindow.h \
+        onlinevarian.h \
         qcustomplot.h \
         serialport.h \
         status.h

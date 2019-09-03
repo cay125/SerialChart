@@ -11,7 +11,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent),ui(new Ui::MainWin
     p.setColor(QPalette::Background,Qt::white);
     setAutoFillBackground(true);
     setPalette(p);
-
+    for(int i=0;i<6;i++)
+        onlineVar[i] = new onlineVarian();
     for(int i=0;i<21;i++)
     {
         dataEdit[i]=new QLineEdit();
@@ -504,6 +505,7 @@ void MainWindow::timerSlot_customplot()
                 xPos.append(j*dx_len/len+lastX);
             }
             mGraphs[cnt]->addData(xPos,PDataVec[cnt]);
+            onlineVar[cnt]->addData(PDataVec[cnt]);
         }
         else
         {
@@ -512,8 +514,13 @@ void MainWindow::timerSlot_customplot()
 //        PDataVec[cnt].clear();
         if((lastX+dx_len) > XRANGE && len!=0)
         {
-//            for(int j=0;j<len;j++)
-//                mGraphs[cnt]->data()->remove(mGraphs[cnt]->dataMainKey(0));
+            QVector<double> removeX;
+            for(int j=0;j<len;j++)
+            {
+                //mGraphs[cnt]->data()->remove(mGraphs[cnt]->dataMainKey(0));
+                removeX.append(mGraphs[cnt]->dataMainValue(j));
+            }
+            onlineVar[cnt]->removeData(removeX);
             mGraphs[cnt]->data()->removeBefore(lastX+dx_len-XRANGE);
         }
 //        mGraphs[cnt]->rescaleValueAxis(true, true);
@@ -527,7 +534,8 @@ void MainWindow::timerSlot_customplot()
             if(cnt<6)
                 dataEdit[cnt]->setText(QString::number(PDataVec[cnt][PDataVec[cnt].size()-1],'f',4));
             else if(cnt>=6 && cnt <12)
-                dataEdit[cnt]->setText(QString::number(sqrt(dataTotalVariance[cnt-6]),'f',4));
+                //dataEdit[cnt]->setText(QString::number(sqrt(dataTotalVariance[cnt-6]),'f',4));
+                dataEdit[cnt]->setText(QString::number(sqrt(onlineVar[cnt-6]->currentVar),'f',4));
             else if(cnt>=12 && cnt<18)
                 dataEdit[cnt]->setText(QString::number(PData[cnt-12+15]));
             else
@@ -555,9 +563,11 @@ void MainWindow::timerSlot_customplot()
             graphValue=mGraphs[i]->visible()?graphValue:0;
             mTags[i]->updatePosition(graphValue);
             mTags[i]->setText(QString::number(graphValue,'f'));
-            double tag_ave=dataCnt>0?dataTotalSum[i]/dataCnt:0;
-            mAveTags[i]->updatePosition(tag_ave);
-            mAveTags[i]->setText(QString::number(tag_ave,'f'));
+            //double tag_ave=dataCnt>0?dataTotalSum[i]/dataCnt:0;
+            //mAveTags[i]->updatePosition(tag_ave);
+            //mAveTags[i]->setText(QString::number(tag_ave,'f'));
+            mAveTags[i]->updatePosition(onlineVar[i]->currentMean);
+            mAveTags[i]->setText(QString::number(onlineVar[i]->currentMean,'f'));
             customplot[i]->replot();
         }
     }
