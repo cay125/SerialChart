@@ -95,6 +95,8 @@ private slots:
 
     void on_btnFlash_clicked();
 
+    void on_speedSlider_valueChanged(int value);
+
 signals:
     void port_started(QString,int);
     void port_closed();

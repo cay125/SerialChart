@@ -8,6 +8,7 @@ SerialPort::SerialPort(QObject *parent) : QObject(parent)
     this->moveToThread(my_thread);
     port->moveToThread(my_thread);
     my_thread->start();  //启动线程
+    buildTableCRC16();
 }
 
 SerialPort::~SerialPort()
@@ -69,6 +70,51 @@ void SerialPort::stop_port()
 //    delete port;
     qDebug() << "port have been closed";
 }
+uint32_t SerialPort::crc_check(uint8_t* data, uint32_t length)
+{
+    unsigned short crc_reg = 0xFFFF;
+    while (length--)
+        crc_reg = (crc_reg >> 8) ^ crc16_table[(crc_reg ^ *data++) & 0xff];
+    return (uint32_t)(~crc_reg) & 0x0000FFFF;
+}
+void SerialPort::buildTableCRC16()
+{
+    uint16_t i16 , j16;
+    uint16_t data16;
+    uint16_t accum16;
+    for(i16=0;i16<256;i16++)
+    {
+      data16 = (uint16_t)(i16<<8);
+        accum16 = 0;
+        for(j16=0;j16<8;j16++)
+        {
+          if((data16^accum16)&0x8000)
+            {
+              accum16 = (accum16<<1)^0x1021;
+            }
+            else
+            {
+              accum16<<=1;
+            }
+            data16 <<= 1;
+        }
+        tableCRC16[i16] = accum16;
+    }
+}
+uint16_t SerialPort::calcCRC16()
+{
+    uint16_t crc16 = 0;
+    for(int i=0;i<35;i++)
+    {
+        if(i==0)
+            crc16 = (crc16<<8)^tableCRC16[(crc16>>8)^(0x23)];
+        else if(i==1)
+            crc16 = (crc16<<8)^tableCRC16[(crc16>>8)^(0x01)];
+        else
+            crc16 = (crc16<<8)^tableCRC16[(crc16>>8)^((uint8_t)pointData.at(i-2))];
+    }
+    return crc16;
+}
 
 void SerialPort::handle_data()
 {
@@ -109,8 +155,8 @@ void SerialPort::handle_data()
             if(state>=39)
             {
                 state=0;
-//                qDebug() << "emit signal";
-//                if((uint8_t)(pointData.at(33))==(uint8_t)0x0e && (uint8_t)(pointData.at(34))==(uint8_t)0x0f)
+                uint16_t crc_res = calcCRC16();
+                if((uint8_t)(pointData.at(33))==(uint8_t)(crc_res&0xff) && (uint8_t)(pointData.at(34))==(uint8_t)((crc_res>>8)&0xff))
                     emit receive_data(pointData);
             }
         }

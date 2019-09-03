@@ -64,6 +64,9 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent),ui(new Ui::MainWin
     ui->GraEdit->setText("9.8");
     ui->GraEdit->setValidator(new QDoubleValidator());
     ui->GraEdit->setFont(QFont("Microsoft YaHei", 9, QFont::Normal,false));
+    ui->speedSlider->setRange(2,50);
+    ui->speedSlider->setValue(2);
+    dx_len=ui->speedSlider->value();
 
     uart=new SerialPort();
     connect(uart,SIGNAL(connected()),this,SLOT(uart_connected()),Qt::QueuedConnection);
@@ -827,4 +830,9 @@ double MainWindow::onlineVariance(double input,int index)
     double t1=dataCnt*(dataTotalVariance[index]+(newAve-oldAve)*(newAve-oldAve));
     double t2=(newAve-input)*(newAve-input);
     return (t1+t2)/(dataCnt+1);
+}
+
+void MainWindow::on_speedSlider_valueChanged(int value)
+{
+    dx_len=value;
 }
