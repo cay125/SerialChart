@@ -3,7 +3,7 @@
 #include "serialport.h"
 #include <QSerialPortInfo>
 #include "status.h"
-MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent),ui(new Ui::MainWindow),series(new QLineSeries),timer(new QTimer),status(new Status),timer_data(new QTimer)
+MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent),ui(new Ui::MainWindow),series(new QLineSeries),timer(new QTimer),status(new Status),timer_data(new QTimer),linePalette(new stylePalette)
 {
 //    showMaximized();
     //set white background color
@@ -183,6 +183,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent),ui(new Ui::MainWin
 //    connect(timer, SIGNAL(timeout()), this, SLOT(timerSlot()));
     connect(timer, SIGNAL(timeout()), this, SLOT(timerSlot_customplot()));
     connect(timer_data, SIGNAL(timeout()), this, SLOT(timerSlot_data()));
+    connect(linePalette,SIGNAL(signal_changeBackColor(QColor)),this,SLOT(paletteColorSlot(QColor)));
     timer_data->setInterval((int)(1000.0/flashRate));
     timer_data->start();
     timer->setInterval(30);
@@ -302,6 +303,7 @@ void MainWindow::contextMenuRequest(QPoint pos)
                 break;
             }
         }
+        menu->addAction("Change chart color",linePalette,SLOT(slot_OpenColorPad()));
         menu->addAction("Move to top left", this, SLOT(moveLegend()))->setData((int)(Qt::AlignTop|Qt::AlignLeft));
         menu->addAction("Move to top center", this, SLOT(moveLegend()))->setData((int)(Qt::AlignTop|Qt::AlignHCenter));
         menu->addAction("Move to top right", this, SLOT(moveLegend()))->setData((int)(Qt::AlignTop|Qt::AlignRight));
@@ -847,4 +849,14 @@ double MainWindow::onlineVariance(double input,int index)
 void MainWindow::on_speedSlider_valueChanged(int value)
 {
     dx_len=value;
+}
+void MainWindow::paletteColorSlot(QColor color)
+{
+    QPen pen(color);
+    mGraphs[plotSelect]->setPen(pen);
+    mTags[plotSelect]->setPen(pen);
+    QCPSelectionDecorator *decorator=new QCPSelectionDecorator();
+    pen.setWidth(2);
+    decorator->setPen(pen);
+    mGraphs[plotSelect]->setSelectionDecorator(decorator);
 }

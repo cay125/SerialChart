@@ -18,6 +18,7 @@
 #include "serialport.h"
 #include "status.h"
 #include "onlinevarian.h"
+#include "stylepalette.h"
 
 QT_CHARTS_USE_NAMESPACE
 namespace Ui {class MainWindow;}
@@ -74,6 +75,7 @@ private:
     double gra_accel=9.8;
     double angle_xyz[3]={0};
     onlineVarian *onlineVar[6];
+    stylePalette *linePalette;
 private slots:
     void timerSlot_data();
     void timerSlot();
@@ -98,6 +100,7 @@ private slots:
     void on_btnFlash_clicked();
 
     void on_speedSlider_valueChanged(int value);
+    void paletteColorSlot(QColor);
 
 signals:
     void port_started(QString,int);

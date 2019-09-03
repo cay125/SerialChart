@@ -38,7 +38,8 @@ SOURCES += \
         onlinevarian.cpp \
         qcustomplot.cpp \
         serialport.cpp \
-        status.cpp
+        status.cpp \
+        stylepalette.cpp
 
 HEADERS += \
         axistag.h \
@@ -47,7 +48,8 @@ HEADERS += \
         onlinevarian.h \
         qcustomplot.h \
         serialport.h \
-        status.h
+        status.h \
+        stylepalette.h
 
 FORMS += \
         mainwindow.ui
