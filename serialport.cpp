@@ -8,6 +8,7 @@ SerialPort::SerialPort(QObject *parent) : QObject(parent)
     port->moveToThread(my_thread);
     my_thread->start();  //启动线程
     buildTableCRC16();
+    qDebug()<< "serial work on thread id = " << QThread::currentThreadId();
 }
 
 SerialPort::~SerialPort()
@@ -45,7 +46,7 @@ void SerialPort::start_port(QString portname, int baudrate)
 void SerialPort::stop_port()
 {
     port->close();
-    qDebug() << "port have been closed";
+    qDebug() << "Port have been closed";
 }
 uint32_t SerialPort::crc_check(uint8_t* data, uint32_t length)
 {

@@ -4,6 +4,13 @@
 onlineVarian::onlineVarian()
 {
 }
+void onlineVarian::clearData()
+{
+    dataTotalSum=0;
+    dataCnt=0;
+    currentVar=0;
+    currentMean=0;
+}
 double onlineVarian::addData(QVector<double> input)
 {
     if(input.size()==0)

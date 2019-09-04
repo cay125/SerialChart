@@ -11,6 +11,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent),ui(new Ui::MainWin
     p.setColor(QPalette::Background,Qt::white);
     setAutoFillBackground(true);
     setPalette(p);
+    qDebug()<< "mainwindow work on thread id = " << QThread::currentThreadId();
     for(int i=0;i<6;i++)
         onlineVar[i] = new onlineVarian();
     for(int i=0;i<21;i++)
@@ -735,6 +736,7 @@ void MainWindow::on_btnStart_clicked()
             angle_xyz[i]=0;
         for(int i=0;i<6;i++)
         {
+            onlineVar[i]->clearData();
             customplot[i]->xAxis->setRange(0,XRANGE);
             customplot[i]->yAxis->setRange(-10,10);
             customplot[i]->setInteraction(QCP::iRangeZoom,false);

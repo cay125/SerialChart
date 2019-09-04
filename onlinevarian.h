@@ -10,6 +10,7 @@ public:
     double currentMean=0;
     double addData(QVector<double> input);
     double removeData(QVector<double> input);
+    void clearData();
 private:
     double dataTotalSum=0;
     int dataCnt=0;
