@@ -3,15 +3,18 @@
 #include "serialport.h"
 #include <QSerialPortInfo>
 #include "status.h"
-MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent),ui(new Ui::MainWindow),series(new QLineSeries),timer(new QTimer),status(new Status),timer_data(new QTimer),linePalette(new stylePalette)
+MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent),ui(new Ui::MainWindow),series(new QLineSeries),timer(new QTimer),status(new Status),timer_data(new QTimer),linePalette(new stylePalette),fftwin(new fftWindow(parent)),fftloader(new fftLoader())
 {
-//    showMaximized();
+    //showMaximized();
     //set white background color
     ui->setupUi(this);
     p.setColor(QPalette::Background,Qt::white);
     setAutoFillBackground(true);
     setPalette(p);
     qDebug()<< "mainwindow work on thread id = " << QThread::currentThreadId();
+    fft_thread=new QThread();
+    fftloader->moveToThread(fft_thread);
+    fft_thread->start();
     for(int i=0;i<6;i++)
         onlineVar[i] = new onlineVarian();
     for(int i=0;i<21;i++)
@@ -185,6 +188,9 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent),ui(new Ui::MainWin
     connect(timer, SIGNAL(timeout()), this, SLOT(timerSlot_customplot()));
     connect(timer_data, SIGNAL(timeout()), this, SLOT(timerSlot_data()));
     connect(linePalette,SIGNAL(signal_changeBackColor(QColor)),this,SLOT(paletteColorSlot(QColor)));
+    connect(this, SIGNAL(FFTstart_signal(QVariant,QString)), fftloader,SLOT(FFTstart_slot(QVariant,QString)));
+    connect(fftloader,SIGNAL(FFTfinished_signal(QVariant,QString)),fftwin,SLOT(FFTfinished_slot(QVariant,QString)));
+    connect(fftwin,SIGNAL(fftNum_signal(int)),fftloader,SLOT(fftNum_slot(int)));
     timer_data->setInterval((int)(1000.0/flashRate));
     timer_data->start();
     timer->setInterval(30);
@@ -305,6 +311,7 @@ void MainWindow::contextMenuRequest(QPoint pos)
             }
         }
         menu->addAction("Change chart color",linePalette,SLOT(slot_OpenColorPad()));
+        menu->addAction((isfftTransfer[plotSelect] && fftwin->isVisible())? "Hide signal FFT" : "Show signal FFT",this,SLOT(addFFTplotSlot()));
         menu->addAction("Move to top left", this, SLOT(moveLegend()))->setData((int)(Qt::AlignTop|Qt::AlignLeft));
         menu->addAction("Move to top center", this, SLOT(moveLegend()))->setData((int)(Qt::AlignTop|Qt::AlignHCenter));
         menu->addAction("Move to top right", this, SLOT(moveLegend()))->setData((int)(Qt::AlignTop|Qt::AlignRight));
@@ -506,6 +513,17 @@ void MainWindow::timerSlot_customplot()
 //                mGraphs[cnt]->addData(j*dx_len/len+lastX,PDataVec[cnt][j-1]);
 //                mGraphs[cnt]->addData(dx_len+lastX,PData[cnt]);
                 xPos.append(j*dx_len/len+lastX);
+                fftData[cnt].append(PDataVec[cnt][j-1]);
+                if(fftData[cnt].size()>=fftloader->N)
+                {
+                    if(isfftTransfer[cnt])
+                    {
+                        QVariant dataTransfer;
+                        dataTransfer.setValue(fftData[cnt]);
+                        emit FFTstart_signal(dataTransfer,mGraphs[cnt]->name());
+                    }
+                    fftData[cnt].clear();
+                }
             }
             mGraphs[cnt]->addData(xPos,PDataVec[cnt]);
             onlineVar[cnt]->addData(PDataVec[cnt]);
@@ -737,6 +755,7 @@ void MainWindow::on_btnStart_clicked()
         for(int i=0;i<6;i++)
         {
             onlineVar[i]->clearData();
+            fftData[i].clear();
             customplot[i]->xAxis->setRange(0,XRANGE);
             customplot[i]->yAxis->setRange(-10,10);
             customplot[i]->setInteraction(QCP::iRangeZoom,false);
@@ -857,8 +876,38 @@ void MainWindow::paletteColorSlot(QColor color)
     QPen pen(color);
     mGraphs[plotSelect]->setPen(pen);
     mTags[plotSelect]->setPen(pen);
+    if(isfftTransfer[plotSelect])
+        fftwin->changePlotPen(mGraphs[plotSelect]->name(),pen);
     QCPSelectionDecorator *decorator=new QCPSelectionDecorator();
     pen.setWidth(2);
     decorator->setPen(pen);
     mGraphs[plotSelect]->setSelectionDecorator(decorator);
+    if(status->isrunning==false)
+        customplot[plotSelect]->replot();
+}
+void MainWindow::addFFTplotSlot()
+{
+    if(!isfftTransfer[plotSelect])
+    {
+        fftwin->addPlot(mGraphs[plotSelect]->name(), mGraphs[plotSelect]->pen(), 512);
+        isfftTransfer[plotSelect]=true;
+        fftwin->show();
+        fftwin->activateWindow();
+    }
+    else
+    {
+        if(fftwin->isVisible())
+        {
+            fftwin->removePlot(mGraphs[plotSelect]->name());
+            isfftTransfer[plotSelect]=false;
+        }
+        else
+        {
+            fftwin->show();
+        }
+    }
+}
+void MainWindow::closeEvent(QCloseEvent *event)
+{
+    fftwin->close();
 }

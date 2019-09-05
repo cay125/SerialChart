@@ -33,6 +33,8 @@ DEFINES += QT_DEPRECATED_WARNINGS
 SOURCES += \
         axistag.cpp \
         configuration.cpp \
+        fftloader.cpp \
+        fftwindow.cpp \
         main.cpp \
         mainwindow.cpp \
         onlinevarian.cpp \
@@ -44,6 +46,9 @@ SOURCES += \
 HEADERS += \
         axistag.h \
         configuration.h \
+        fftloader.h \
+        fftw3.h \
+        fftwindow.h \
         mainwindow.h \
         onlinevarian.h \
         qcustomplot.h \
@@ -52,4 +57,7 @@ HEADERS += \
         stylepalette.h
 
 FORMS += \
+        fftwindow.ui \
         mainwindow.ui
+
+LIBS += C:/Users/xiangpu/Downloads/fftw-3.3.5-dll64/libfftw3-3.lib

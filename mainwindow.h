@@ -2,6 +2,7 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
+#include <QCloseEvent>
 #include <QMessageBox>
 #include <QLineSeries>
 #include <QChartView>
@@ -13,12 +14,16 @@
 #include <QTimer>
 #include <QLineEdit>
 #include <QLabel>
+#include <QMetaType>
+#include <QVariant>
 #include "qcustomplot.h"
 #include "axistag.h"
 #include "serialport.h"
 #include "status.h"
 #include "onlinevarian.h"
 #include "stylepalette.h"
+#include "fftwindow.h"
+#include "fftloader.h"
 
 QT_CHARTS_USE_NAMESPACE
 namespace Ui {class MainWindow;}
@@ -76,6 +81,11 @@ private:
     double angle_xyz[3]={0};
     onlineVarian *onlineVar[6];
     stylePalette *linePalette;
+    fftWindow *fftwin;
+    fftLoader *fftloader;
+    QThread *fft_thread;
+    QVector<double> fftData[6];
+    bool isfftTransfer[6]={false};
 private slots:
     void timerSlot_data();
     void timerSlot();
@@ -101,10 +111,16 @@ private slots:
 
     void on_speedSlider_valueChanged(int value);
     void paletteColorSlot(QColor);
+    void addFFTplotSlot();
 
 signals:
     void port_started(QString,int);
     void port_closed();
+    void FFTstart_signal(QVariant,QString);
+
+protected:
+    void closeEvent(QCloseEvent *event);
+
 };
 
 #endif // MAINWINDOW_H
