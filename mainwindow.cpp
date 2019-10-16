@@ -219,13 +219,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent),ui(new Ui::MainWin
 //    customplot[0]->yAxis2->setTickLabels(false);
 //    customplot[0]->legend->setVisible(false);
 //    ui->mainLayout->addWidget(customplot[0]);
-//    QFile file("haha.txt");
-//    file.open(QIODevice::WriteOnly | QIODevice::Append);
-//    file.write("haha\nkaka");
-//    QTextStream out(&file);
-//    out<<QString("hehehhe")<<endl;
-//    out<<10;
-//    file.close();
+    initStates();
 }
 void MainWindow::selectionChanged()
 {
@@ -981,6 +975,49 @@ void MainWindow::addAllDataSlot()
 }
 void MainWindow::closeEvent(QCloseEvent *event)
 {
+    QFile fileToColor("configs.ini");
+    fileToColor.open(QIODevice::WriteOnly | QIODevice::Text);
+    QTextStream stream(&fileToColor);
+    for(int i=0;i<6;i++)
+    {
+        QColor color=mGraphs[i]->pen().color();
+        int red=color.red(),green=color.green(),blue=color.blue();
+        stream<<red<<" "<<green<<" "<<blue<<endl;
+    }
+    stream<<ui->speedSlider->value()<<endl;
+    fileToColor.close();
     fftwin->close();
     allwindow->close();
+}
+void MainWindow::initStates()
+{
+    QFileInfo info("configs.ini");
+    if(!info.exists())
+    {
+        qDebug()<<"config file doesn't exist";
+    }
+    else
+    {
+        qDebug()<<"config file exists";
+        QFile fileToColor("configs.ini");
+        fileToColor.open(QIODevice::ReadOnly | QIODevice::Text);
+        QTextStream stream(&fileToColor);
+        QString line;
+        for(int i=0;i<6;i++)
+        {
+            line=stream.readLine();
+            QStringList list=line.split(' ');
+            QPen pen(QColor(list[0].toInt(),list[1].toInt(),list[2].toInt()));
+            mGraphs[i]->setPen(pen);
+            mTags[i]->setPen(pen);
+            QCPSelectionDecorator *decorator=new QCPSelectionDecorator();
+            pen.setWidth(2);
+            decorator->setPen(pen);
+            mGraphs[i]->setSelectionDecorator(decorator);
+            customplot[i]->replot();
+        }
+        line=stream.readLine();
+        ui->speedSlider->setValue(line.toInt());
+        fileToColor.close();
+    }
 }

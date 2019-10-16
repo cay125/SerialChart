@@ -42,6 +42,7 @@ private:
     fileSaver *saver;
     onlineVarian *onlineVarToTxt[6];
     allDataWindow *allwindow;
+    void initStates();
     void connectMarkers();
     double onlineVariance(double,int);
     Ui::MainWindow *ui;

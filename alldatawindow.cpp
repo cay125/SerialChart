@@ -36,7 +36,7 @@ void allDataWindow::addPlot(QString name, QPen pen)
         customplot[index]->axisRect()->insetLayout()->setInsetAlignment(0, Qt::AlignTop|Qt::AlignRight);
         customplot[index]->setContextMenuPolicy(Qt::CustomContextMenu);
         connect(customplot[index], SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(contextMenuRequest(QPoint)));
-        ui->mainLayout->addWidget(customplot[index],index,0);
+        ui->mainLayout->addWidget(customplot[index]);
     }
 }
 void allDataWindow::removePlot(QString name)

@@ -35,7 +35,7 @@ void fftWindow::addPlot(QString name, QPen pen, int fftNum)
         customplot[index]->axisRect()->insetLayout()->setInsetAlignment(0, Qt::AlignTop|Qt::AlignRight);
         customplot[index]->setContextMenuPolicy(Qt::CustomContextMenu);
         connect(customplot[index], SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(contextMenuRequest(QPoint)));
-        ui->mainLayout->addWidget(customplot[index],index,0);
+        ui->mainLayout->addWidget(customplot[index]);
     }
 }
 
