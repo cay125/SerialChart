@@ -3,7 +3,8 @@
 #include "serialport.h"
 #include <QSerialPortInfo>
 #include "status.h"
-MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent),ui(new Ui::MainWindow),series(new QLineSeries),timer(new QTimer),status(new Status),timer_data(new QTimer),linePalette(new stylePalette),fftwin(new fftWindow(parent)),fftloader(new fftLoader())
+#include "switchcontrol.h"
+MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent),ui(new Ui::MainWindow),series(new QLineSeries),timer(new QTimer),status(new Status),timer_data(new QTimer),linePalette(new stylePalette),fftwin(new fftWindow(parent)),fftloader(new fftLoader()),allwindow(new allDataWindow(parent))
 {
     //showMaximized();
     //set white background color
@@ -16,7 +17,18 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent),ui(new Ui::MainWin
     fftloader->moveToThread(fft_thread);
     fft_thread->start();
     for(int i=0;i<6;i++)
+    {
         onlineVar[i] = new onlineVarian();
+        onlineVarToTxt[i] = new onlineVarian();
+    }
+    SwitchControl *fileSwitchControl = new SwitchControl(this);
+    // set switchcontrol style
+    fileSwitchControl->setToggle(true);
+    fileSwitchControl->setCheckedColor(QColor(0, 160, 230));
+    ui->speedSlider->setMinimumWidth(160);
+    ui->hLayout->addWidget(fileSwitchControl);
+    saver=new fileSaver("record.txt", fileSwitchControl->isToggled());
+    connect(fileSwitchControl, SIGNAL(toggled(bool)), saver, SLOT(isSave_slot(bool)));
     for(int i=0;i<21;i++)
     {
         dataEdit[i]=new QLineEdit();
@@ -207,6 +219,13 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent),ui(new Ui::MainWin
 //    customplot[0]->yAxis2->setTickLabels(false);
 //    customplot[0]->legend->setVisible(false);
 //    ui->mainLayout->addWidget(customplot[0]);
+//    QFile file("haha.txt");
+//    file.open(QIODevice::WriteOnly | QIODevice::Append);
+//    file.write("haha\nkaka");
+//    QTextStream out(&file);
+//    out<<QString("hehehhe")<<endl;
+//    out<<10;
+//    file.close();
 }
 void MainWindow::selectionChanged()
 {
@@ -311,6 +330,7 @@ void MainWindow::contextMenuRequest(QPoint pos)
             }
         }
         menu->addAction("Change chart color",linePalette,SLOT(slot_OpenColorPad()));
+        menu->addAction((isShowALLData[plotSelect] && allwindow->isVisible())? "Hide whole length signal" : "Show whole length signal", this, SLOT(addAllDataSlot()));
         menu->addAction((isfftTransfer[plotSelect] && fftwin->isVisible())? "Hide signal FFT" : "Show signal FFT",this,SLOT(addFFTplotSlot()));
         menu->addAction("Move to top left", this, SLOT(moveLegend()))->setData((int)(Qt::AlignTop|Qt::AlignLeft));
         menu->addAction("Move to top center", this, SLOT(moveLegend()))->setData((int)(Qt::AlignTop|Qt::AlignHCenter));
@@ -527,6 +547,9 @@ void MainWindow::timerSlot_customplot()
             }
             mGraphs[cnt]->addData(xPos,PDataVec[cnt]);
             onlineVar[cnt]->addData(PDataVec[cnt]);
+            onlineVarToTxt[cnt]->addData(PDataVec[cnt]);
+            if(isShowALLData[cnt])
+                allwindow->transferData(PDataVec[cnt],mGraphs[cnt]->name());
         }
         else
         {
@@ -552,6 +575,7 @@ void MainWindow::timerSlot_customplot()
 //        PDataVec[cnt].clear();
     if(dataTextUpdateCnt>=3 && PDataVec[0].size()!=0)
     {
+        //QVector<QString> dataToTxt;
         for(int cnt=0;cnt<21;cnt++)
         {
             if(cnt<6)
@@ -563,8 +587,29 @@ void MainWindow::timerSlot_customplot()
                 dataEdit[cnt]->setText(QString::number(PData[cnt-12+15]));
             else
                 dataEdit[cnt]->setText(QString::number(angle_xyz[cnt-18],'f',4));
+            //if(cnt<6 || cnt>=12)
+                //dataToTxt.append(dataEdit[cnt]->text());
+            //else
+                //dataToTxt.append(QString::number(sqrt(onlineVar[cnt-6]->currentVar),'f',4));
         }
+        //saver->writeText(dataToTxt);
         dataTextUpdateCnt=0;
+    }
+    if(PDataVec[0].size()!=0)
+    {
+        QVector<QString> dataToTxt;
+        for(int cnt=0;cnt<21;cnt++)
+        {
+            if(cnt<6)
+                dataToTxt.append(QString::number(PDataVec[cnt][PDataVec[cnt].size()-1],'f',4));
+            else if(cnt>=6 && cnt <12)
+                dataToTxt.append(QString::number(sqrt(onlineVarToTxt[cnt-6]->currentVar),'f',4));
+            else if(cnt>=12 && cnt<18)
+                dataToTxt.append(QString::number(PData[cnt-12+15]));
+            else
+                dataToTxt.append(QString::number(angle_xyz[cnt-18],'f',4));
+        }
+        saver->writeText(dataToTxt);
     }
     if(PDataVec[0].size()!=0)
     {
@@ -601,6 +646,7 @@ void MainWindow::timerSlot_customplot()
 //    qDebug()<<"sorted "<<mGraphs[0]->dataSortKey(0);
 //    qDebug()<<"main v "<<mGraphs[0]->dataMainValue(0);
 //    dx+=dx_len;
+    allwindow->replotGraphs();
 }
 void MainWindow::timerSlot()
 {
@@ -878,6 +924,8 @@ void MainWindow::paletteColorSlot(QColor color)
     mTags[plotSelect]->setPen(pen);
     if(isfftTransfer[plotSelect])
         fftwin->changePlotPen(mGraphs[plotSelect]->name(),pen);
+    if(isShowALLData[plotSelect])
+        allwindow->changePlotPen(mGraphs[plotSelect]->name(),pen);
     QCPSelectionDecorator *decorator=new QCPSelectionDecorator();
     pen.setWidth(2);
     decorator->setPen(pen);
@@ -907,7 +955,32 @@ void MainWindow::addFFTplotSlot()
         }
     }
 }
+void MainWindow::addAllDataSlot()
+{
+    if(!isShowALLData[plotSelect])
+    {
+        allwindow->addPlot(mGraphs[plotSelect]->name(), mGraphs[plotSelect]->pen());
+        isShowALLData[plotSelect]=true;
+        allwindow->show();
+        allwindow->activateWindow();
+    }
+    else
+    {
+        if(allwindow->isVisible())
+        {
+            allwindow->removePlot(mGraphs[plotSelect]->name());
+            isShowALLData[plotSelect]=false;
+        }
+        else
+        {
+            allwindow->show();
+        }
+    }
+    QVector<double> data = saver->getdataFromTxt(plotSelect);
+    allwindow->initData(data,mGraphs[plotSelect]->name());
+}
 void MainWindow::closeEvent(QCloseEvent *event)
 {
     fftwin->close();
+    allwindow->close();
 }

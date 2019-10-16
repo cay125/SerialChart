@@ -31,32 +31,39 @@ DEFINES += QT_DEPRECATED_WARNINGS
 
 
 SOURCES += \
+        alldatawindow.cpp \
         axistag.cpp \
         configuration.cpp \
         fftloader.cpp \
         fftwindow.cpp \
+        filesaver.cpp \
         main.cpp \
         mainwindow.cpp \
         onlinevarian.cpp \
         qcustomplot.cpp \
         serialport.cpp \
         status.cpp \
-        stylepalette.cpp
+        stylepalette.cpp \
+        switchcontrol.cpp
 
 HEADERS += \
+        alldatawindow.h \
         axistag.h \
         configuration.h \
         fftloader.h \
         fftw3.h \
         fftwindow.h \
+        filesaver.h \
         mainwindow.h \
         onlinevarian.h \
         qcustomplot.h \
         serialport.h \
         status.h \
-        stylepalette.h
+        stylepalette.h \
+        switchcontrol.h
 
 FORMS += \
+        alldatawindow.ui \
         fftwindow.ui \
         mainwindow.ui
 

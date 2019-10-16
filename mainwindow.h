@@ -24,6 +24,8 @@
 #include "stylepalette.h"
 #include "fftwindow.h"
 #include "fftloader.h"
+#include "filesaver.h"
+#include "alldatawindow.h"
 
 QT_CHARTS_USE_NAMESPACE
 namespace Ui {class MainWindow;}
@@ -37,6 +39,9 @@ public:
     ~MainWindow();
 
 private:
+    fileSaver *saver;
+    onlineVarian *onlineVarToTxt[6];
+    allDataWindow *allwindow;
     void connectMarkers();
     double onlineVariance(double,int);
     Ui::MainWindow *ui;
@@ -86,6 +91,7 @@ private:
     QThread *fft_thread;
     QVector<double> fftData[6];
     bool isfftTransfer[6]={false};
+    bool isShowALLData[6]={false};
 private slots:
     void timerSlot_data();
     void timerSlot();
@@ -112,6 +118,7 @@ private slots:
     void on_speedSlider_valueChanged(int value);
     void paletteColorSlot(QColor);
     void addFFTplotSlot();
+    void addAllDataSlot();
 
 signals:
     void port_started(QString,int);

@@ -13,7 +13,7 @@ public:
     void clearData();
 private:
     double dataTotalSum=0;
-    int dataCnt=0;
+    long long dataCnt=0;
 };
 
 #endif // ONLINEVARIAN_H
