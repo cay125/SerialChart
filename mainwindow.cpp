@@ -493,6 +493,30 @@ void MainWindow::timerSlot_data()
            }
            PDataBuffer[i]=0;
         }
+        QVector<QString> dataToTxt;
+        for(int i=0;i<21;i++)
+        {
+            if(i<6)
+            {
+                dataToTxt.append(QString::number(PDataVec[i][PDataVec[i].size()-1],'f',4));
+            }
+            else if(i>=6 && i<12)
+            {
+                QVector<double> d;
+                d.append(PDataVec[i-6][PDataVec[i-6].size()-1]);
+                onlineVarToTxt[i-6]->addData(d);
+                dataToTxt.append(QString::number(sqrt(onlineVarToTxt[i-6]->currentVar),'f',4));
+            }
+            else if(i>=12 && i<18)
+            {
+                dataToTxt.append(QString::number(PData[i-12+15]));
+            }
+            else
+            {
+                dataToTxt.append(QString::number(angle_xyz[i-18],'f',4));
+            }
+        }
+        saver->writeText(dataToTxt);
         for(int i=0;i<21;i++)
         {
             if(dataCnt!=0)
@@ -541,7 +565,7 @@ void MainWindow::timerSlot_customplot()
             }
             mGraphs[cnt]->addData(xPos,PDataVec[cnt]);
             onlineVar[cnt]->addData(PDataVec[cnt]);
-            onlineVarToTxt[cnt]->addData(PDataVec[cnt]);
+            //onlineVarToTxt[cnt]->addData(PDataVec[cnt]);
             if(isShowALLData[cnt])
                 allwindow->transferData(PDataVec[cnt],mGraphs[cnt]->name());
         }
@@ -589,22 +613,22 @@ void MainWindow::timerSlot_customplot()
         //saver->writeText(dataToTxt);
         dataTextUpdateCnt=0;
     }
-    if(PDataVec[0].size()!=0)
-    {
-        QVector<QString> dataToTxt;
-        for(int cnt=0;cnt<21;cnt++)
-        {
-            if(cnt<6)
-                dataToTxt.append(QString::number(PDataVec[cnt][PDataVec[cnt].size()-1],'f',4));
-            else if(cnt>=6 && cnt <12)
-                dataToTxt.append(QString::number(sqrt(onlineVarToTxt[cnt-6]->currentVar),'f',4));
-            else if(cnt>=12 && cnt<18)
-                dataToTxt.append(QString::number(PData[cnt-12+15]));
-            else
-                dataToTxt.append(QString::number(angle_xyz[cnt-18],'f',4));
-        }
-        saver->writeText(dataToTxt);
-    }
+//    if(PDataVec[0].size()!=0)
+//    {
+//        QVector<QString> dataToTxt;
+//        for(int cnt=0;cnt<21;cnt++)
+//        {
+//            if(cnt<6)
+//                dataToTxt.append(QString::number(PDataVec[cnt][PDataVec[cnt].size()-1],'f',4));
+//            else if(cnt>=6 && cnt <12)
+//                dataToTxt.append(QString::number(sqrt(onlineVarToTxt[cnt-6]->currentVar),'f',4));
+//            else if(cnt>=12 && cnt<18)
+//                dataToTxt.append(QString::number(PData[cnt-12+15]));
+//            else
+//                dataToTxt.append(QString::number(angle_xyz[cnt-18],'f',4));
+//        }
+//        saver->writeText(dataToTxt);
+//    }
     if(PDataVec[0].size()!=0)
     {
         for(int i=0;i<6;i++)

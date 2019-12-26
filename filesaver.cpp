@@ -17,7 +17,7 @@ void fileSaver::writeText(QVector<QString> text)
         QTextStream out(&file);
         for(int i=0;i<len;i++)
             out<<text[i]<<" ";
-        out<<endl;
+        out<<'\r'<<'\n';
     }
     if(write_times>100)
     {
