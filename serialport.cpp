@@ -100,42 +100,26 @@ void SerialPort::handle_data()
     QByteArray data = port->readAll();
     for(int i=0;i<data.size();i++)
     {
-        if( state==0 && static_cast<unsigned char>(data.at(i))==0xeb )
+        if( state==0 && static_cast<unsigned char>(data.at(i))==0x55 )
         {
             pointData.clear();
             state++;
         }
         else if(state==1)
         {
-            if(static_cast<unsigned char>(data.at(i))==0x90)
+            if(static_cast<unsigned char>(data.at(i))==0xaa)
                 state++;
             else
                 state=0;
         }
         else if(state==2)
         {
-            if(static_cast<unsigned char>(data.at(i))==0x23)
-                state++;
-            else
-                state=0;
-        }
-        else if(state==3)
-        {
-            if(static_cast<unsigned char>(data.at(i))==0x01)
-                state++;
-            else
-                state=0;
-        }
-        else if(state>=4)
-        {
             pointData.append(data.at(i));
             state++;
-            if(state>=39)
+            if(state>=9)
             {
                 state=0;
-                uint16_t crc_res = calcCRC16();
-                if((uint8_t)(pointData.at(33))==(uint8_t)(crc_res&0xff) && (uint8_t)(pointData.at(34))==(uint8_t)((crc_res>>8)&0xff))
-                    emit receive_data(pointData);
+                emit receive_data(pointData);
             }
         }
     }

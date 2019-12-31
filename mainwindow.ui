@@ -165,7 +165,7 @@
              </font>
             </property>
             <property name="text">
-             <string>G_Acc(m/s^2)</string>
+             <string>Factor</string>
             </property>
            </widget>
           </item>
@@ -255,7 +255,7 @@
            </font>
           </property>
           <property name="text">
-           <string>ChangeG_Acc</string>
+           <string>ChangeFactor</string>
           </property>
          </widget>
         </item>
@@ -321,14 +321,14 @@
           <rect>
            <x>0</x>
            <y>0</y>
-           <width>201</width>
-           <height>600</height>
+           <width>218</width>
+           <height>453</height>
           </rect>
          </property>
          <property name="minimumSize">
           <size>
            <width>0</width>
-           <height>600</height>
+           <height>200</height>
           </size>
          </property>
          <widget class="QWidget" name="verticalLayoutWidget_2">

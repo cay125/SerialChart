@@ -29,7 +29,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent),ui(new Ui::MainWin
     ui->hLayout->addWidget(fileSwitchControl);
     saver=new fileSaver("record.txt", fileSwitchControl->isToggled());
     connect(fileSwitchControl, SIGNAL(toggled(bool)), saver, SLOT(isSave_slot(bool)));
-    for(int i=0;i<21;i++)
+    for(int i=0;i<3;i++)
     {
         dataEdit[i]=new QLineEdit();
         dataEdit[i]->setMaximumWidth(70);
@@ -38,16 +38,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent),ui(new Ui::MainWin
 
         dataLabel[i]=new QLabel();
         dataLabel[i]->setMinimumHeight(20);
-        if(i<6)
-            dataLabel[i]->setText(SeriesName[i]);
-        else if(i>=6 && i<9)
-            dataLabel[i]->setText(SeriesName[i-6].left(4) + "STD_" + SeriesName[i-6].right(1));
-        else if(i>=9 && i<12)
-            dataLabel[i]->setText(SeriesName[i-6].left(5) + "STD_" + SeriesName[i-6].right(1));
-        else if(i>=12 && i<18)
-            dataLabel[i]->setText(SeriesName[i-12+15]);
-        else
-            dataLabel[i]->setText(SeriesName[i-18+12]);
+        dataLabel[i]->setText(SeriesName[i]);
         dataLabel[i]->setFont(QFont("Microsoft YaHei", 9, QFont::Normal,false));
 
         ui->lineLayout->addWidget(dataEdit[i]);
@@ -78,7 +69,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent),ui(new Ui::MainWin
     ui->FlashEdit->setText("1");
     ui->FlashEdit->setValidator(new QIntValidator(0,1000));
     ui->FlashEdit->setFont(QFont("Microsoft YaHei", 9, QFont::Normal,false));
-    ui->GraEdit->setText("9.8");
+    ui->GraEdit->setText("1");
     ui->GraEdit->setValidator(new QDoubleValidator());
     ui->GraEdit->setFont(QFont("Microsoft YaHei", 9, QFont::Normal,false));
     ui->speedSlider->setRange(2,50);
@@ -87,19 +78,12 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent),ui(new Ui::MainWin
 
     uart=new SerialPort();
     connect(uart,SIGNAL(connected()),this,SLOT(uart_connected()),Qt::QueuedConnection);
-//    connect(uart,SIGNAL(receive_data(QByteArray)),this,SLOT(on_receive_data(QByteArray)), Qt::QueuedConnection);
     connect(this,SIGNAL(port_closed()),uart,SLOT(stop_port()));
     connect(this,SIGNAL(port_started(QString,int)),uart,SLOT(start_port(QString,int)));
 
-//    series->setName("line1");
-//    chart->addSeries(series);
-
-//    for(int i=0;i<21;i++)
-//        chartLine[SeriesIndex[i]].push_back(i);
-    for(int i=0;i<6;i++)
+    for(int i=0;i<3;i++)
     {
         customplot[i]=new QCustomPlot(this);
-//        chart[i]=new QChart();
     }
     QPen pen[9];
     pen[0].setColor(QColor(250,120,  0));
@@ -107,23 +91,17 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent),ui(new Ui::MainWin
     pen[2].setColor(QColor(0xff,0, 0));
     pen[8].setColor(QColor(  0,0x66, 0xff));
     pen[7].setColor(QColor(  0xff,0x77, 0xff));
-//    pen[5].setColor(QColor(  0xd2,0x69, 0x1e));
     pen[5].setColor(QColor(  0xda,0xa5, 0x20));
     pen[6].setColor(QColor(  0xff,0x14, 0x93));
     pen[4].setColor(QColor(  0x80,0x80, 0));
     pen[3].setColor(QColor(  0x22,0x8b, 0x22));
-//    for(int i=0;i<9;i++)
-//        pen[i].setWidth(2);
-    int color[6]={0};
-    for(int i=0;i<6;i++)
-    {
-//        mSeries[i]=new QLineSeries();
-//        mSeries[i]->setName(SeriesName[i]);
-//        chart[SeriesIndex[i]]->addSeries(mSeries[i]);
 
+    int color[6]={0};
+    for(int i=0;i<3;i++)
+    {
         customplot[SeriesIndex[i]]->addGraph();
         mGraphs[i]=customplot[SeriesIndex[i]]->graph();
-        mGraphs[i]->setName(SeriesName[i]+SerialUnit[i]);
+        mGraphs[i]->setName(SeriesName[i]);
         mGraphs[i]->setPen(pen[color[SeriesIndex[i]]++]);
         QCPSelectionDecorator *decorator=new QCPSelectionDecorator();
         QPen tpen;
@@ -132,7 +110,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent),ui(new Ui::MainWin
         decorator->setPen(tpen);
         mGraphs[i]->setSelectionDecorator(decorator);
     }
-    for(int i=0;i<6;i++)
+    for(int i=0;i<3;i++)
     {
         customplot[i]->axisRect()->axis(QCPAxis::atRight, 0)->setPadding(80); // add some padding to have space for tags
         mTags[i] = new AxisTag(mGraphs[i]->valueAxis());
@@ -141,32 +119,12 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent),ui(new Ui::MainWin
         mAveTags[i] = new AxisTag(mGraphs[i]->valueAxis());
         mAveTags[i]->setPen(QPen(QColor(0,0,255)));
         mAveTags[i]->setText("0");
-//        chart[i]->createDefaultAxes();
-//        chart[i]->setTitle("Chart");
-//        chart[i]->axisX()->setTitleFont(QFont("Microsoft YaHei", 10, QFont::Normal,false));
-//        chart[i]->axisY()->setTitleFont(QFont("Microsoft YaHei", 10, QFont::Normal,false));
-//        chart[i]->axisX()->setRange(0,XRANGE);
-//        chart[i]->axisY()->setRange(-10,10);
-//        chart[i]->axisX()->setTitleText("Time");
-//        chart[i]->axisY()->setTitleText("data");
-//        chart[i]->axisX()->setGridLineVisible(true);
-//        chart[i]->axisY()->setGridLineVisible(true);
-//        chart[i]->axisX()->setVisible(false);
-//        chart[i]->axisY()->setVisible(true);
-//        chart[i]->axisX()->setTitleVisible(true);
-//        chart[i]->axisY()->setTitleVisible(true);
-//        chart[i]->legend()->setAlignment(Qt::AlignBottom);
-//        chartView[i] = new QChartView(chart[i]);
-//        chartView[i]->setRenderHint(QPainter::Antialiasing);
-//        ui->mainLayout->addWidget(chartView[i],i/2,i%2);
-
         customplot[i]->setInteractions(QCP::iSelectLegend | QCP::iSelectPlottables);
         customplot[i]->axisRect()->setupFullAxesBox();
         customplot[i]->legend->setSelectedFont(QFont("Microsoft YaHei", 9, QFont::Normal,false));
         customplot[i]->legend->setSelectableParts(QCPLegend::spItems); // legend box shall not be selectable, only legend items
         // connect some interaction slots:
         connect(customplot[i], SIGNAL(selectionChangedByUser()), this, SLOT(selectionChanged()));
-//        connect(customplot[i], SIGNAL(legendDoubleClick(QCPLegend*,QCPAbstractLegendItem*,QMouseEvent*)), this, SLOT(legendDoubleClick(QCPLegend*,QCPAbstractLegendItem*)));
         customplot[i]->setContextMenuPolicy(Qt::CustomContextMenu);
         connect(customplot[i], SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(contextMenuRequest(QPoint)));
 
@@ -196,7 +154,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent),ui(new Ui::MainWin
     //mSeries[0]->replace(data);
     //series2->replace(data);
 
-//    connect(timer, SIGNAL(timeout()), this, SLOT(timerSlot()));
     connect(timer, SIGNAL(timeout()), this, SLOT(timerSlot_customplot()));
     connect(timer_data, SIGNAL(timeout()), this, SLOT(timerSlot_data()));
     connect(linePalette,SIGNAL(signal_changeBackColor(QColor)),this,SLOT(paletteColorSlot(QColor)));
@@ -206,19 +163,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent),ui(new Ui::MainWin
     timer_data->setInterval((int)(1000.0/flashRate));
     timer_data->start();
     timer->setInterval(30);
-    //timer->start();
 
-//    customplot[0] = new QCustomPlot(this);
-//    customplot[0]->addGraph();
-//    customplot[0]->graph(0)->setData(x,y);
-//    customplot[0]->xAxis->setRange(0,200);
-//    customplot[0]->yAxis->setRange(-5,5);
-//    customplot[0]->xAxis2->setVisible(true);
-//    customplot[0]->xAxis2->setTickLabels(false);
-//    customplot[0]->yAxis2->setVisible(true);
-//    customplot[0]->yAxis2->setTickLabels(false);
-//    customplot[0]->legend->setVisible(false);
-//    ui->mainLayout->addWidget(customplot[0]);
     initStates();
 }
 void MainWindow::selectionChanged()
@@ -299,7 +244,7 @@ void MainWindow::contextMenuRequest(QPoint pos)
     QMenu *menu = new QMenu(this);
     menu->setAttribute(Qt::WA_DeleteOnClose);
     QCustomPlot* custom_chart = qobject_cast<QCustomPlot*> (sender());
-    for(int i=0;i<6;i++)
+    for(int i=0;i<3;i++)
     {
         if(custom_chart==customplot[i])
         {
@@ -357,46 +302,13 @@ void MainWindow::moveLegend()
 }
 void MainWindow::on_receive_data(QByteArray data)
 {
-    //static int receive_data_cnt=0;
-    for(int i=0;i<6;i++)
-        PData[i]=((int)((uint8_t)(data.at(i*4+3))<<24))|((int)((uint8_t)(data.at(i*4+2))<<16))|((int)((uint8_t)(data.at(i*4+1))<<8))|((int)((uint8_t)(data.at(i*4+0))));
-    for(int i=0;i<6;i++)
-        PData[i+15]=(int)(data[24+i]);
-    for(int i=0;i<3;i++)
-    {
-        PData[i+6]+=PData[i];
-//        PData[i+9]+=PData[i+6];
-        PData[i+12]+=PData[i+3];
-    }
+    for(int i=0;i<1;i++)
+        PData[i]=((int)((uint8_t)(data.at(i*3+2))<<16))|((int)((uint8_t)(data.at(i*3+1))<<8))|((int)((uint8_t)(data.at(i*3+0))));
+    for(int i=0;i<2;i++)
+        PData[i+1]=((int)((uint8_t)(data.at(i*2+4))<<8))|((int)((uint8_t)(data.at(i*2+3))));
     for(int i=0;i<21;i++)
         PDataBuffer[i]+=PData[i];
-//    for(int i=0;i<21;i++)
-//    {
-//        if(i<3)
-//            data_calib[i]=PData[i]*0.0000001*9.8;
-//        else if(i>=3 && i<6)
-//            data_calib[i]=PData[i]*0.000001*3600;
-//        if(dataCnt!=0)
-//            dataTotalVariance[i]=onlineVariance(data_calib[i],i);
-//        dataTotalSum[i]+=data_calib[i];
-//        PDataBuffer[i]+=PData[i];
-//    }
-//    dataCnt++;
     receive_data_cnt++;
-//    if(receive_data_cnt>=flashRate)
-//    {
-//        for(int i=0;i<21;i++)
-//        {
-//            if(i<3)
-//                PDataVec[i].append(1.0*PDataBuffer[i]/receive_data_cnt*0.0000001*9.8);
-//            else if(i>=3 && i<6)
-//                PDataVec[i].append(1.0*PDataBuffer[i]/receive_data_cnt*0.000001*3600);
-//            else
-//                PDataVec[i].append(1.0*PDataBuffer[i]/receive_data_cnt);
-//            PDataBuffer[i]=0;
-//        }
-//        receive_data_cnt=0;
-//    }
     //dataCnt++;
     //data.clear();
     //qDebug() << "main handing thread is:" << QThread::currentThreadId();
@@ -469,23 +381,11 @@ void MainWindow::timerSlot_data()
 {
     if(receive_data_cnt>0)
     {
-        for(int i=0;i<21;i++)
+        for(int i=0;i<3;i++)
         {
-           if(i<3)
+           if(i==0)
            {
-               PDataVec[i].append(1.0*PDataBuffer[i]/receive_data_cnt*0.0000001*gra_accel);
-           }
-           else if(i>=3 && i<6)
-           {
-               PDataVec[i].append(1.0*PDataBuffer[i]/receive_data_cnt*0.000001*3600);
-           }
-           else if(i>=12 && i<15)
-           {
-               angle_xyz[i-12]+=1.0*PDataVec[i-12+3][PDataVec[i-12+3].size()-1]/3600.0/flashRate;
-               if(PDataVec[i].size()==0)
-                   PDataVec[i].append(1.0*PDataVec[i-12+3][PDataVec[i-12+3].size()-1]/3600.0/flashRate);
-               else
-                   PDataVec[i].append(PDataVec[i][PDataVec[i].size()-1]+1.0*PDataVec[i-12+3][PDataVec[i-12+3].size()-1]/3600.0/flashRate);
+               PDataVec[i].append(1.0*PDataBuffer[i]/receive_data_cnt/gra_accel);
            }
            else
            {
@@ -494,36 +394,12 @@ void MainWindow::timerSlot_data()
            PDataBuffer[i]=0;
         }
         QVector<QString> dataToTxt;
-        for(int i=0;i<21;i++)
+        for(int i=0;i<3;i++)
         {
-            if(i<6)
-            {
-                dataToTxt.append(QString::number(PDataVec[i][PDataVec[i].size()-1],'f',4));
-            }
-            else if(i>=6 && i<12)
-            {
-                QVector<double> d;
-                d.append(PDataVec[i-6][PDataVec[i-6].size()-1]);
-                onlineVarToTxt[i-6]->addData(d);
-                dataToTxt.append(QString::number(sqrt(onlineVarToTxt[i-6]->currentVar),'f',4));
-            }
-            else if(i>=12 && i<18)
-            {
-                dataToTxt.append(QString::number(PData[i-12+15]));
-            }
-            else
-            {
-                dataToTxt.append(QString::number(angle_xyz[i-18],'f',4));
-            }
+            dataToTxt.append(QString::number(PDataVec[i][PDataVec[i].size()-1],'f',4));
         }
         saver->writeText(dataToTxt);
-        for(int i=0;i<21;i++)
-        {
-            if(dataCnt!=0)
-                dataTotalVariance[i]=onlineVariance(PDataVec[i][PDataVec[i].size()-1],i);
-            dataTotalSum[i]+=PDataVec[i][PDataVec[i].size()-1];
-        }
-        dataCnt++;
+
         receive_data_cnt=0;
     }
 }
@@ -533,23 +409,15 @@ void MainWindow::timerSlot_customplot()
     dataTextUpdateCnt++;
     int index=mGraphs[0]->dataCount()-1;
     double lastX=index>=0?mGraphs[0]->dataMainKey(index):0;
-    for(int cnt=0;cnt<6;cnt++)
+    for(int cnt=0;cnt<3;cnt++)
     {
-//        if(dataTextUpdateCnt>=3)
-//        {
-//            dataEdit[cnt*2]->setText(QString::number(PData[cnt]));
-//            dataEdit[cnt*2+1]->setText(QString::number(dataTotalVariance[cnt],'f',2));
-//        }
         // calculate and add a new data point to each graph:
-        //mGraphs[cnt]->addData(dx, PData[cnt]);
         QVector<double> xPos;
         int len=PDataVec[cnt].size();
         if(len!=0)
         {
             for(int j=1;j<=len;j++)
             {
-//                mGraphs[cnt]->addData(j*dx_len/len+lastX,PDataVec[cnt][j-1]);
-//                mGraphs[cnt]->addData(dx_len+lastX,PData[cnt]);
                 xPos.append(j*dx_len/len+lastX);
                 fftData[cnt].append(PDataVec[cnt][j-1]);
                 if(fftData[cnt].size()>=fftloader->N)
@@ -573,7 +441,7 @@ void MainWindow::timerSlot_customplot()
         {
             //mGraphs[cnt]->addData(lastX+dx_len,index>=0?mGraphs[cnt]->dataMainValue(index):0);
         }
-//        PDataVec[cnt].clear();
+
         if((lastX+dx_len) > XRANGE && len!=0)
         {
             QVector<double> removeX;
@@ -587,51 +455,20 @@ void MainWindow::timerSlot_customplot()
             onlineVar[cnt]->removeData(removeX);
             mGraphs[cnt]->data()->removeBefore(lastX+dx_len-XRANGE);
         }
-//        mGraphs[cnt]->rescaleValueAxis(true, true);
+
     }
-//    for(int cnt=0;cnt<21;cnt++)
-//        PDataVec[cnt].clear();
+
     if(dataTextUpdateCnt>=3 && PDataVec[0].size()!=0)
     {
-        //QVector<QString> dataToTxt;
-        for(int cnt=0;cnt<21;cnt++)
+        for(int cnt=0;cnt<3;cnt++)
         {
-            if(cnt<6)
-                dataEdit[cnt]->setText(QString::number(PDataVec[cnt][PDataVec[cnt].size()-1],'f',4));
-            else if(cnt>=6 && cnt <12)
-                //dataEdit[cnt]->setText(QString::number(sqrt(dataTotalVariance[cnt-6]),'f',4));
-                dataEdit[cnt]->setText(QString::number(sqrt(onlineVar[cnt-6]->currentVar),'f',4));
-            else if(cnt>=12 && cnt<18)
-                dataEdit[cnt]->setText(QString::number(PData[cnt-12+15]));
-            else
-                dataEdit[cnt]->setText(QString::number(angle_xyz[cnt-18],'f',4));
-            //if(cnt<6 || cnt>=12)
-                //dataToTxt.append(dataEdit[cnt]->text());
-            //else
-                //dataToTxt.append(QString::number(sqrt(onlineVar[cnt-6]->currentVar),'f',4));
+            dataEdit[cnt]->setText(QString::number(PDataVec[cnt][PDataVec[cnt].size()-1],'f',4));
         }
-        //saver->writeText(dataToTxt);
         dataTextUpdateCnt=0;
     }
-//    if(PDataVec[0].size()!=0)
-//    {
-//        QVector<QString> dataToTxt;
-//        for(int cnt=0;cnt<21;cnt++)
-//        {
-//            if(cnt<6)
-//                dataToTxt.append(QString::number(PDataVec[cnt][PDataVec[cnt].size()-1],'f',4));
-//            else if(cnt>=6 && cnt <12)
-//                dataToTxt.append(QString::number(sqrt(onlineVarToTxt[cnt-6]->currentVar),'f',4));
-//            else if(cnt>=12 && cnt<18)
-//                dataToTxt.append(QString::number(PData[cnt-12+15]));
-//            else
-//                dataToTxt.append(QString::number(angle_xyz[cnt-18],'f',4));
-//        }
-//        saver->writeText(dataToTxt);
-//    }
     if(PDataVec[0].size()!=0)
     {
-        for(int i=0;i<6;i++)
+        for(int i=0;i<3;i++)
         {
             mGraphs[i]->rescaleValueAxis(false,true);
             double graphValue;
@@ -639,19 +476,12 @@ void MainWindow::timerSlot_customplot()
             {
                 customplot[i]->xAxis->rescale();
                 customplot[i]->xAxis->setRange(customplot[i]->xAxis->range().upper, XRANGE, Qt::AlignRight);
-    //            graphValue = mGraphs[chartLine[i][mainGraph[i]]]->dataMainValue(XRANGE);
             }
-    //        else
-    //        {
-    //            graphValue = mGraphs[chartLine[i][mainGraph[i]]]->dataMainValue(dx);
-    //        }
             graphValue=mGraphs[i]->dataMainValue(mGraphs[i]->dataCount()-1);
             graphValue=mGraphs[i]->visible()?graphValue:0;
             mTags[i]->updatePosition(graphValue);
             mTags[i]->setText(QString::number(graphValue,'f'));
-            //double tag_ave=dataCnt>0?dataTotalSum[i]/dataCnt:0;
-            //mAveTags[i]->updatePosition(tag_ave);
-            //mAveTags[i]->setText(QString::number(tag_ave,'f'));
+
             mAveTags[i]->updatePosition(onlineVar[i]->currentMean);
             mAveTags[i]->setText(QString::number(onlineVar[i]->currentMean,'f'));
             customplot[i]->replot();
@@ -659,11 +489,7 @@ void MainWindow::timerSlot_customplot()
     }
     for(int cnt=0;cnt<21;cnt++)
         PDataVec[cnt].clear();
-//    qDebug()<<"count"<<mGraphs[0]->dataCount();
-//    qDebug()<<"main "<<mGraphs[0]->dataMainKey(0);
-//    qDebug()<<"sorted "<<mGraphs[0]->dataSortKey(0);
-//    qDebug()<<"main v "<<mGraphs[0]->dataMainValue(0);
-//    dx+=dx_len;
+
     allwindow->replotGraphs();
 }
 void MainWindow::timerSlot()
@@ -800,9 +626,8 @@ void MainWindow::on_btnStart_clicked()
     {
         for(int i=0;i<21;i++)
         {
-            if(i<6)
+            if(i<3)
             {
-//                mSeries[i]->clear();
                 mGraphs[i]->data()->clear();
             }
             PDataVec[i].clear();
@@ -816,7 +641,7 @@ void MainWindow::on_btnStart_clicked()
         dataCnt=0;
         for(int i=0;i<3;i++)
             angle_xyz[i]=0;
-        for(int i=0;i<6;i++)
+        for(int i=0;i<3;i++)
         {
             onlineVar[i]->clearData();
             fftData[i].clear();
@@ -836,7 +661,7 @@ void MainWindow::on_btnStart_clicked()
         ui->btnStart->setText("Start");
         status->isrunning=false;
         timer->stop();
-        for(int i=0;i<6;i++)
+        for(int i=0;i<3;i++)
         {
             customplot[i]->setInteraction(QCP::iRangeZoom,true);
             customplot[i]->setInteraction(QCP::iRangeDrag,true);
@@ -912,14 +737,14 @@ void MainWindow::handleMarkerClicked()
 void MainWindow::on_btnFlash_clicked()
 {
     int trate=ui->FlashEdit->text().toInt();
-    if(trate>0 && trate<=300)
+    if(trate>0 && trate<=1000)
     {
         flashRate=trate;
         timer_data->setInterval((int)(1000.0/flashRate));
     }
     else
     {
-        QMessageBox::information(this,"Warning","Invalid Input(flash rate should be larger than 0 and smaller than 300)");
+        QMessageBox::information(this,"Warning","Invalid Input(flash rate should be larger than 0 and smaller than 1000)");
     }
 }
 double MainWindow::onlineVariance(double input,int index)
@@ -1002,7 +827,7 @@ void MainWindow::closeEvent(QCloseEvent *event)
     QFile fileToColor("configs.ini");
     fileToColor.open(QIODevice::WriteOnly | QIODevice::Text);
     QTextStream stream(&fileToColor);
-    for(int i=0;i<6;i++)
+    for(int i=0;i<3;i++)
     {
         QColor color=mGraphs[i]->pen().color();
         int red=color.red(),green=color.green(),blue=color.blue();
@@ -1027,7 +852,7 @@ void MainWindow::initStates()
         fileToColor.open(QIODevice::ReadOnly | QIODevice::Text);
         QTextStream stream(&fileToColor);
         QString line;
-        for(int i=0;i<6;i++)
+        for(int i=0;i<3;i++)
         {
             line=stream.readLine();
             QStringList list=line.split(' ');

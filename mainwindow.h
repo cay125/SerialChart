@@ -71,7 +71,7 @@ private:
     QLineSeries *mSeries[21];
     QCPGraph * mGraphs[21];
     QString SerialUnit[6]={"(m/s^2)","(m/s^2)","(m/s^2)","(deg/h)","(deg/h)","(deg/h)"};
-    QString SeriesName[21]={"Acc_X","Acc_Y","Acc_Z","Gyro_X","Gyro_Y","Gyro_Z","Xspeed","Yspeed","Zspeed","Xdist","Ydist","Zdist","Angle_X","Angle_Y","Angle_Z","Acc_Temp_X","Acc_Temp_Y","Acc_Temp_Z","Gyro_Temp_X","Gyro_Temp_Y","Gyro_Temp_Z"};
+    QString SeriesName[21]={"RotSpeed","Temp","Gain","Gyro_X","Gyro_Y","Gyro_Z","Xspeed","Yspeed","Zspeed","Xdist","Ydist","Zdist","Angle_X","Angle_Y","Angle_Z","Acc_Temp_X","Acc_Temp_Y","Acc_Temp_Z","Gyro_Temp_X","Gyro_Temp_Y","Gyro_Temp_Z"};
 //    QString SeriesName[21]={"Acc_X","Acc_Y","Acc_Z","Gyro_X","Gyro_Y","Gyro_Z","Acc_Temp_X","Acc_Temp_Y","Acc_Temp_Z","Gyro_Temp_X","Gyro_Temp_Y","Gyro_Temp_Z","Yspeed","Zspeed","Xdist","Ydist","Zdist","Xangle","Yangle","Zangle","XaccelT"};
     int maxValue[4]={-0xfffffff,-0xfffffff,-0xfffffff,-0xfffffff},minValue[4]={0xfffffff,0xfffffff,0xfffffff,0xfffffff};
     int mainGraph[6]={0};
@@ -83,7 +83,7 @@ private:
     int flashRate=1;
     int receive_data_cnt=0;
     QTimer *timer_data;
-    double gra_accel=9.8;
+    double gra_accel=1;
     double angle_xyz[3]={0};
     onlineVarian *onlineVar[6];
     stylePalette *linePalette;
