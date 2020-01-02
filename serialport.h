@@ -25,7 +25,7 @@ public:
 public slots:
   void handle_data();  //处理接收到的数据
   void write_data();     //发送数据
-  void start_port(QString,int);
+  void start_port(QString,int,int);
   void stop_port();
 
 signals:

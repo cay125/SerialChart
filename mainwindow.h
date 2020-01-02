@@ -122,7 +122,7 @@ private slots:
     void addAllDataSlot();
 
 signals:
-    void port_started(QString,int);
+    void port_started(QString,int,int);
     void port_closed();
     void FFTstart_signal(QVariant,QString);
 

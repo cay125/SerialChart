@@ -106,6 +106,43 @@
          </layout>
         </item>
         <item>
+         <layout class="QHBoxLayout" name="ParityLayout">
+          <item>
+           <widget class="QLabel" name="label">
+            <property name="minimumSize">
+             <size>
+              <width>70</width>
+              <height>0</height>
+             </size>
+            </property>
+            <property name="font">
+             <font>
+              <family>Microsoft YaHei</family>
+             </font>
+            </property>
+            <property name="text">
+             <string>Parity Check</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QComboBox" name="ParityBox">
+            <property name="minimumSize">
+             <size>
+              <width>90</width>
+              <height>0</height>
+             </size>
+            </property>
+            <property name="font">
+             <font>
+              <family>Microsoft YaHei</family>
+             </font>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item>
          <layout class="QHBoxLayout" name="FlashLayout">
           <item>
            <widget class="QLabel" name="Flashlabel">
@@ -322,7 +359,7 @@
            <x>0</x>
            <y>0</y>
            <width>218</width>
-           <height>453</height>
+           <height>449</height>
           </rect>
          </property>
          <property name="minimumSize">

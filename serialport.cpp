@@ -1,5 +1,6 @@
 #include "serialport.h"
 #include "status.h"
+#include <QSerialPortInfo>
 SerialPort::SerialPort(QObject *parent) : QObject(parent)
 {
     my_thread = new QThread();
@@ -27,11 +28,17 @@ void SerialPort::init_port()
     port->setParity(QSerialPort::NoParity);            //奇偶校验
     port->setFlowControl(QSerialPort::NoFlowControl);  //流控制
 }
-void SerialPort::start_port(QString portname, int baudrate)
+void SerialPort::start_port(QString portname, int baudrate, int parity)
 {
     init_port();
     port->setPortName(portname);
     port->setBaudRate(baudrate);
+    if(parity==0)
+        port->setParity(QSerialPort::OddParity);
+    else if(parity==1)
+        port->setParity(QSerialPort::EvenParity);
+    else
+        port->setParity(QSerialPort::NoParity);
     if (port->open(QIODevice::ReadWrite))
     {
         qDebug() << "Port have been opened";
@@ -112,7 +119,7 @@ void SerialPort::handle_data()
             else
                 state=0;
         }
-        else if(state==2)
+        else if(state>=2)
         {
             pointData.append(data.at(i));
             state++;

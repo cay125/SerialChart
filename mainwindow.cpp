@@ -66,6 +66,10 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent),ui(new Ui::MainWin
     ui->BaudBox->addItem("230400");
     ui->BaudBox->setCurrentIndex(4);
     ui->BaudBox->setFont(QFont("Microsoft YaHei", 9, QFont::Normal,false));
+    ui->ParityBox->addItem("Odd");
+    ui->ParityBox->addItem("Even");
+    ui->ParityBox->addItem("None");
+    ui->ParityBox->setCurrentIndex(2);
     ui->FlashEdit->setText("1");
     ui->FlashEdit->setValidator(new QIntValidator(0,1000));
     ui->FlashEdit->setFont(QFont("Microsoft YaHei", 9, QFont::Normal,false));
@@ -79,7 +83,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent),ui(new Ui::MainWin
     uart=new SerialPort();
     connect(uart,SIGNAL(connected()),this,SLOT(uart_connected()),Qt::QueuedConnection);
     connect(this,SIGNAL(port_closed()),uart,SLOT(stop_port()));
-    connect(this,SIGNAL(port_started(QString,int)),uart,SLOT(start_port(QString,int)));
+    connect(this,SIGNAL(port_started(QString,int,int)),uart,SLOT(start_port(QString,int,int)));
 
     for(int i=0;i<3;i++)
     {
@@ -592,7 +596,7 @@ void MainWindow::on_btnConnect_clicked()
     if(status->isconnected == false)
     {
 //        uart->start_port(ui->ComBox->currentText(),ui->BaudBox->currentText().toInt());
-        emit port_started(ui->ComBox->currentText(),ui->BaudBox->currentText().toInt());
+        emit port_started(ui->ComBox->currentText(),ui->BaudBox->currentText().toInt(),ui->ParityBox->currentIndex());
     }
     else
     {
@@ -600,6 +604,7 @@ void MainWindow::on_btnConnect_clicked()
         ui->btnStart->setEnabled(false);
         ui->ComBox->setEnabled(true);
         ui->BaudBox->setEnabled(true);
+        ui->ParityBox->setEnabled(true);
         timer->stop();
         ui->btnStart->setText("Start");
         status->isconnected=false;
@@ -614,6 +619,7 @@ void MainWindow::uart_connected()
     ui->btnStart->setEnabled(true);
     ui->ComBox->setEnabled(false);
     ui->BaudBox->setEnabled(false);
+    ui->ParityBox->setEnabled(false);
 }
 MainWindow::~MainWindow()
 {
